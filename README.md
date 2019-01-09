@@ -9,6 +9,9 @@ Code for reproducing experiments in ["AutoLoss: Learning Discrete Schedule for A
 ## Pretrained models
 
 ## Experiments
+To train a controller for regression task, run:
+`python trainer.py --task_name=reg --task_mode=train --exp_name=train_reg_controller`
+
 
 ## Citation
 If you use any part of this code in your research, please cite our paper:

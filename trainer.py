@@ -114,7 +114,7 @@ class Trainer():
             while True:
                 step += 1
                 action = model_ctrl.sample(state)
-                state_new, reward, dead = model_task.response(action, lr_task)
+                state_new, reward, dead = model_task.response(action)
                 # ----Record training details.----
                 transition = {'state': state,
                               'action': action,

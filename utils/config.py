@@ -318,8 +318,9 @@ def load_config(cfg_dir):
     return cfg
 
 def override_config(config, args):
-    if not args.lambda_task:
+    if args.lambda_task:
         config.lambda_task = args.lambda_task
+
 
 
 
