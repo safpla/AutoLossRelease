@@ -11,16 +11,16 @@ import math
 from time import gmtime, strftime
 import argparse
 
-#from models import controller
-#from models import reg
+from models import controller_reinforce
+from models import reg
 #from models import cls
 #from models import gan
 #from models import gan_grid
 #from models import gan_cifar10
 import utils
-#from utils.analyse_utils import loss_analyzer_toy
+from utils.analyse_utils import loss_analyzer_toy
 #from utils.analyse_utils import loss_analyzer_gan
-#import socket
+import socket
 
 
 root_path = os.path.dirname(os.path.realpath(__file__))
@@ -35,6 +35,7 @@ def parse_args():
     parser.add_argument('--save_ctrl', type=bool, default=False, help='whether to save the controller model')
     parser.add_argument('--test_trials', type=int, default=10, help='how many trials to run in test')
     parser.add_argument('--baseline_trials', type=int, default=10, help='how many trials to run in baseline')
+    parser.add_argument('--lambda_task', type=float, help='coefficient for L1 regularization in regression and classification task')
 
     return parser.parse_args()
 
@@ -56,7 +57,7 @@ class Trainer():
         exp_name = args.exp_name
         logger.info('exp_name: {}'.format(exp_name))
 
-        self.model_ctrl = controller.Controller(config, exp_name+'_ctrl')
+        self.model_ctrl = controller_reinforce.Controller(config, exp_name+'_ctrl')
         if args.task_name == 'reg':
             self.model_task = reg.Reg(config, exp_name+'_reg')
         elif args.task_name == 'cls':
@@ -74,9 +75,10 @@ class Trainer():
     def train(self, load_ctrl=None, save_ctrl=None):
         """ Iteratively training between controller and the task model """
         config = self.config
-        lr = config.lr_ctrl
+        lr_ctrl = config.lr_ctrl
+        lr_task = config.lr_task
         model_ctrl = self.model_ctrl
-        model_task = self.model_task_
+        model_task = self.model_task
         best_reward = -1e5 # A big negative initial value
         best_acc = 0
         best_loss = 0
@@ -106,12 +108,13 @@ class Trainer():
 
             state = model_task.get_state()
             transitions = []
+
             step = -1
             # ----Running one episode.----
             while True:
                 step += 1
                 action = model_ctrl.sample(state)
-                state_new, reward, dead = model_task.response(action)
+                state_new, reward, dead = model_task.response(action, lr_task)
                 # ----Record training details.----
                 transition = {'state': state,
                               'action': action,
@@ -119,13 +122,13 @@ class Trainer():
                 transitions.append(transition)
 
                 # TODO delete
-                #if 'gan' in args.task_name:
-                #    gen_cost_hist.append(model_task.ema_gen_cost)
-                #    disc_cost_real_hist.append(model_task.ema_disc_cost_real)
-                #    disc_cost_fake_hist.append(model_task.ema_disc_cost_fake)
-                #else:
-                #    valid_loss_hist.append(model_task.previous_valid_loss[-1])
-                #    train_loss_hist.append(model_task.previous_train_loss[-1])
+                if 'gan' in args.task_name:
+                    transition['gen_cost'] = model_task.ema_gen_cost
+                    transition['disc_cost_real'] = model_task.ema_disc_cost_real
+                    transition['disc_cost_fake'] = model_task.ema_disc_cost_fake
+                else:
+                    transition['valid_loss'] = model_task.previous_valid_loss[-1]
+                    transition['train_loss'] = model_task.previous_train_loss[-1]
 
                 state = state_new
                 if dead:
@@ -144,19 +147,15 @@ class Trainer():
 
             # ----Update the controller.----
             final_reward, adv = model_task.get_final_reward()
-            print(transitions)
             reward_hist = discount_rewards(transitions, adv)
-            print(transitions)
             grads = model_ctrl.get_gradients(transitions)
             for idx, grad in enumerate(grads):
                 gradBuffer[idx] += grad
 
-            if lr > config.lr_rl * 0.1:
-                lr = lr * config.lr_decay_rl
-            if ep % config.update_frequency == (config.update_frequency - 1):
+            if ep % config.update_frequency_ctrl == (config.update_frequency_ctrl - 1):
                 logger.info('UPDATE CONTROLLOR')
-                logger.info('lr_ctrl: {}'.format(lr))
-                model_ctrl.train_one_step(gradBuffer, lr)
+                logger.info('lr_ctrl: {}'.format(lr_ctrl))
+                model_ctrl.train_one_step(gradBuffer, lr_ctrl)
                 #logger.info('grad')
                 #for ix, grad in enumerate(gradBuffer):
                 #    logger.info(grad)
@@ -188,10 +187,9 @@ class Trainer():
                 #logger.info('logits: {}'.format(r[4]))
 
             save_model_flag = False
-            if config.student_model_name == 'reg':
-                loss_analyzer_toy(action_hist, valid_loss_hist,
-                                  train_loss_hist, reward_hist)
-                loss = model_stud.best_loss
+            if args.task_name == 'reg':
+                loss_analyzer_toy(transitions)
+                loss = model_task.best_loss
                 if final_reward > best_reward:
                     best_reward = final_reward
                     best_loss = loss
@@ -200,12 +198,12 @@ class Trainer():
                 else:
                     endurance += 1
                 logger.info('best_loss: {}'.format(loss))
-                logger.info('lambda1: {}'.format(config.lambda1_stud))
-            elif config.student_model_name == 'cls':
+                logger.info('lambda: {}'.format(config.lambda_task))
+            elif args.task_name == 'cls':
                 loss_analyzer_toy(action_hist, valid_loss_hist,
                                   train_loss_hist, reward_hist)
-                acc = model_stud.best_acc
-                loss = model_stud.best_loss
+                acc = model_task.best_acc
+                loss = model_task.best_loss
                 if final_reward > best_reward:
                     best_reward = final_reward
                     best_acc = acc
@@ -217,12 +215,12 @@ class Trainer():
                 logger.info('acc: {}'.format(acc))
                 logger.info('best_acc: {}'.format(best_acc))
                 logger.info('best_loss: {}'.format(loss))
-                #if ep % config.save_frequency == 0 and ep > 0:
+                #if ep % config.save_frequency_ctrl == 0 and ep > 0:
                 #    save_model_flag = True
-            elif config.student_model_name == 'gan' or\
-                config.student_model_name == 'gan_cifar10':
+            elif args.task_name == 'gan' or\
+                args.task_name == 'gan_cifar10':
                 loss_analyzer_gan(action_hist, reward_hist)
-                best_inps = model_stud.best_inception_score
+                best_inps = model_task.best_inception_score
                 if final_reward > best_reward:
                     best_reward = final_reward
                     best_best_inps = best_inps
@@ -230,10 +228,10 @@ class Trainer():
                 logger.info('best_inps: {}'.format(best_inps))
                 logger.info('best_best_inps: {}'.format(best_best_inps))
                 logger.info('final_inps_baseline: {}'.\
-                            format(model_stud.final_inps_baseline))
-            elif config.student_model_name == 'gan_grid':
+                            format(model_task.final_inps_baseline))
+            elif args.task_name == 'gan_grid':
                 loss_analyzer_gan(action_hist, reward_hist)
-                hq = model_stud.best_hq
+                hq = model_task.best_hq
                 if final_reward > best_reward:
                     best_reward = final_reward
                     best_hq = hq
@@ -245,68 +243,59 @@ class Trainer():
 
             if save_model_flag and save_ctrl:
                     model_ctrl.save_model(ep)
-            #if endurance > config.max_endurance_rl:
-            #    break
+            if endurance > config.max_endurance_ctrl:
+                break
 
     def test(self, load_ctrl, ckpt_num=None):
         config = self.config
         model_ctrl = self.model_ctrl
-        model_stud = self.model_stud
+        model_task = self.model_task
         model_ctrl.initialize_weights()
-        model_stud.initialize_weights()
+        model_task.initialize_weights()
         model_ctrl.load_model(load_ctrl, ckpt_num=ckpt_num)
-        model_stud.reset()
+        model_task.reset()
 
-        state = model_stud.get_state()
+        state = model_task.get_state()
         for i in range(config.max_training_step):
             action = model_ctrl.sample(state)
-            state_new, _, dead = model_stud.response(action, mode='TEST')
-            if (i % 10 == 0) and config.student_model_name == 'cls':
-                valid_loss = model_stud.previous_valid_loss[-1]
-                valid_acc = model_stud.previous_valid_acc[-1]
-                train_loss = model_stud.previous_train_loss[-1]
-                train_acc = model_stud.previous_train_acc[-1]
-                logger.info('Step {}'.format(i))
-                logger.info('train_loss: {}, valid_loss: {}'.format(train_loss, valid_loss))
-                logger.info('train_acc : {}, valid_acc : {}'.format(train_acc, valid_acc))
-
+            state_new, _, dead = model_task.response(action)
             state = state_new
             if dead:
                 break
-        if config.student_model_name == 'reg':
-            loss = model_stud.best_loss
-            logger.info('loss: {}'.format(loss))
+
+        if config.args.task_name == 'reg':
+            loss, _, _ = model_task.valid(model_task.test_dataset)
+            logger.info('test_loss: {}'.format(loss))
             return loss
-        elif config.student_model_name == 'cls':
-            valid_acc = model_stud.best_acc
-            test_acc = model_stud.test_acc
-            logger.info('valid_acc: {}'.format(valid_acc))
-            logger.info('test_acc: {}'.format(test_acc))
-            return test_acc
-        elif config.student_model_name == 'gan':
-            model_stud.load_model(model_stud.task_dir)
-            inps_test = model_stud.get_inception_score(500, splits=5)
-            model_stud.genrate_images(0)
-            logger.info('inps_test: {}'.format(inps_test))
-            return inps_test
-        elif config.student_model_name == 'gan_grid':
+        elif config.args.task_name == 'cls':
             raise NotImplementedError
-        elif config.student_model_name == 'gan_cifar10':
-            best_inps = model_stud.best_inception_score
-            logger.info('best_inps: {}'.format(best_inps))
-            return best_inps
+        elif config.args.task_name == 'gan':
+            raise NotImplementedError
+        elif config.args.task_name == 'gan_grid':
+            raise NotImplementedError
+        elif config.args.task_name == 'gan_cifar10':
+            raise NotImplementedError
         else:
             raise NotImplementedError
 
     def baseline(self):
-        self.model_stud.initialize_weights()
-        self.model_stud.train(save_model=True)
-        if self.config.student_model_name == 'gan':
-            self.model_stud.load_model(self.model_stud.task_dir)
-            inps_baseline = self.model_stud.get_inception_score(500, splits=5)
-            self.model_stud.generate_images(0)
-            logger.info('inps_baseline: {}'.format(inps_baseline))
-        return inps_baseline
+        config = self.config
+        task_name = config.args.task_name
+        if task_name == 'reg':
+            model_ctrl = reg.controller_designed()
+        model_task = self.model_task
+        model_task.initialize_weights()
+        model_task.reset()
+        for i in range(config.max_training_step):
+            action = model_ctrl.sample()
+            dead = model_task.response(action)
+            if dead:
+                break
+
+        if config.args.task_name == 'reg':
+            loss, _, _ = model_task.valid(model_task.test_dataset)
+            logger.info('test_loss: {}'.format(loss))
+            return loss
 
     def generate(self, load_stud):
         self.model_stud.initialize_weights()
@@ -331,6 +320,8 @@ if __name__ == '__main__':
     logger.info('Machine name: {}'.format(socket.gethostname()))
     config_path = os.path.join(root_path, 'config/' + args.task_name)
     config = utils.load_config(config_path)
+    config.args = args
+    utils.override_config(config, args)
 
     # ----Instantiate a trainer object.----
     trainer = Trainer(config, args)
@@ -344,18 +335,26 @@ if __name__ == '__main__':
         ## ----Testing----
         logger.info('TEST')
         test_metrics = []
+        if not args.test_trials:
+            logger.exception('Argument \'test_trials\' is required if \
+                             \'task_mode\' is \'test\'')
+            exit()
         for i in range(args.test_trials):
             test_metrics.append(trainer.test(args.load_ctrl))
         logger.info(test_metrics)
     elif args.task_mode == 'baseline':
         # ----Baseline----
         logger.info('BASELINE')
+        if not args.baseline_trials:
+            logger.exception('Argument \'baseline_trials\' is required if \
+                             \'task_mode\' is \'baseline\'')
+            exit()
         baseline_metrics = []
         for i in range(args.baseline_trials):
-            baseline_accs.append(trainer.baseline())
-        logger.info(baseline_accs)
+            baseline_metrics.append(trainer.baseline())
+        logger.info(baseline_metrics)
     elif args.task_mode == 'generate':
-        # ----Generate---- only affect in gan tasks
+        # ----Generate---- only in gan tasks
         logger.info('GENERATE')
         trainer.generate(args.load_stud)
 

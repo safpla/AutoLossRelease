@@ -317,6 +317,13 @@ def load_config(cfg_dir):
 
     return cfg
 
+def override_config(config, args):
+    if not args.lambda_task:
+        config.lambda_task = args.lambda_task
+
+
+
+
 if __name__ == '__main__':
     root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     config_path = os.path.join(root_path, 'config/regression.cfg')

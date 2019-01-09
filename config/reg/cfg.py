@@ -31,23 +31,23 @@ class Config():
         self.var_noise = 2
 
         # Task model
-        self.student_model_name = 'reg'
         self.dim_input_task = 16
         self.dim_output_task = 1
-        self.lambda1_task = 0.4
-        self.lambda2_task = 0.05
+        self.lambda_task = 0.2
 
         # Training task model
         self.batch_size = 200
         self.lr_task = 0.0005
         self.valid_frequency_task = 10
+        self.stop_strategy_task = 'exceeding_endurance'
         self.max_endurance_task = 100
         self.max_training_step = 10000
 
         # Controller
         self.controller_model_name = '2layer_logits_clipping'
-        #TODO figure out what it does
+        # "How many recent training steps will be recorded"
         self.num_pre_loss = 2
+
         self.dim_input_ctrl = 5
         self.dim_hidden_ctrl = 16
         self.dim_output_ctrl = 2
