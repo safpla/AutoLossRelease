@@ -156,10 +156,10 @@ class Trainer():
                 if dead:
                     break
 
-            # ----For Gan, use the best model to get inception score on a
+            # ----Use the best model to get inception score on a
             #     larger number of samples to reduce the variance of reward----
-            if args.task_name == 'gan' and model_task.task_dir:
-                model_task.load_model(model_task.task_dir)
+            if args.task_name == 'gan' and model_task.checkpoint_dir:
+                model_task.load_model(model_task.checkpoint_dir)
                 # TODO use hyperparameter
                 inps_test = model_task.get_inception_score(5000)
                 logger.info('inps_test: {}'.format(inps_test))
@@ -178,35 +178,6 @@ class Trainer():
                 logger.info('UPDATE CONTROLLOR')
                 logger.info('lr_ctrl: {}'.format(lr_ctrl))
                 model_ctrl.train_one_step(gradBuffer, lr_ctrl)
-                #logger.info('grad')
-                #for ix, grad in enumerate(gradBuffer):
-                #    logger.info(grad)
-                #    gradBuffer[ix] = grad * 0
-                #logger.info('weights')
-                #model_ctrl.print_weights()
-
-                # ----Print training details.----
-                #logger.info('Outputs')
-                #index = []
-                #ind = 1
-                #while ind < len(state_hist):
-                #    index.append(ind-1)
-                #    ind += 2000
-                #feed_dict = {model_ctrl.state_plh:np.array(state_hist)[index],
-                #            model_ctrl.action_plh:np.array(action_hist)[index],
-                #            model_ctrl.reward_plh:np.array(reward_hist)[index]}
-                #fetch = [model_ctrl.output,
-                #         model_ctrl.action,
-                #         model_ctrl.reward_plh,
-                #         model_ctrl.state_plh,
-                #         model_ctrl.logits
-                #        ]
-                #r = model_ctrl.sess.run(fetch, feed_dict=feed_dict)
-                #logger.info('state:\n{}'.format(r[3]))
-                #logger.info('output:\n{}'.format(r[0]))
-                #logger.info('action: {}'.format(r[1]))
-                #logger.info('reward: {}'.format(r[2]))
-                #logger.info('logits: {}'.format(r[4]))
 
             save_model_flag = False
             if args.task_name == 'reg':
@@ -239,8 +210,6 @@ class Trainer():
                 logger.info('acc: {}'.format(acc))
                 logger.info('best_acc: {}'.format(best_acc))
                 logger.info('best_loss: {}'.format(loss))
-                #if ep % config.save_frequency_ctrl == 0 and ep > 0:
-                #    save_model_flag = True
             elif args.task_name == 'gan' or\
                 args.task_name == 'gan_cifar10':
                 loss_analyzer_gan(action_hist, reward_hist)
@@ -280,14 +249,17 @@ class Trainer():
         model_task.reset()
 
         state = model_task.get_state()
+        actions = np.array([0, 0])
         for i in range(config.max_training_step):
-            action = model_ctrl.sample(state, 0)
+            action = model_ctrl.sample(state, 0.1)
+            actions += np.array(action)
             state_new, _, dead = model_task.response(action)
             state = state_new
-            if dead:
-                break
+
+        print(actions)
 
         if config.args.task_name == 'reg':
+            model_task.load_model()
             loss, _, _ = model_task.valid(model_task.test_dataset)
             logger.info('test_loss: {}'.format(loss))
             return loss
@@ -314,10 +286,9 @@ class Trainer():
         for i in range(config.max_training_step):
             action = model_ctrl.sample(state)
             state, _, dead = model_task.response(action)
-            if dead:
-                break
 
         if config.args.task_name == 'reg':
+            model_task.load_model()
             loss, _, _ = model_task.valid(model_task.test_dataset)
             logger.info('test_loss: {}, after {} steps of optimization'.\
                         format(loss, i))
@@ -368,5 +339,3 @@ if __name__ == '__main__':
         # ----Generate---- only in gan tasks
         logger.info('GENERATE')
         trainer.generate(args.load_stud)
-
-

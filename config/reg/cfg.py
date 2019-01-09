@@ -3,6 +3,9 @@ import socket
 root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.insert(0, root_path)
 
+def get_cfg():
+    return Config()
+
 class Config():
     def __init__(self):
         self.hostname = socket.gethostname()
@@ -33,12 +36,15 @@ class Config():
         # Task model
         self.dim_input_task = 16
         self.dim_output_task = 1
-        self.lambda_task = 0.4
+        self.lambda_task = 0.2
 
         # Training task model
         self.batch_size = 200
         self.lr_task = 0.0005
         self.valid_frequency_task = 10
+        # options for `stop_strategy_task` are: exceeding_endurance,
+        # exceeding_total_steps
+        #self.stop_strategy_task = 'exceeding_total_steps'
         self.stop_strategy_task = 'exceeding_endurance'
         self.max_endurance_task = 100
         self.max_training_step = 20000
@@ -52,7 +58,7 @@ class Config():
         self.dim_hidden_ctrl = 16
         self.dim_output_ctrl = 2
         self.reward_baseline_decay = 0.8
-        self.reward_c = 2000
+        self.reward_c = 20000
         # Set an max step reward, in case the improvement baseline is too small
         # and cause huge reward.
         self.reward_max_value = 20
@@ -69,17 +75,7 @@ class Config():
         self.rl_method = 'reinforce'
         self.epsilon_start_ctrl = 0.5
         self.epsilon_end_ctrl = 0.1
-        self.epsilon_decay_steps_ctrl = 100
-
-
+        self.epsilon_decay_steps_ctrl = 1
     def print_config(self, logger):
         for key, value in vars(self).items():
             logger.info('{}:: {}'.format(key, value))
-
-
-def get_cfg():
-    return Config()
-
-
-if __name__ == '__main__':
-    print(root_path)

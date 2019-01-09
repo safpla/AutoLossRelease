@@ -123,14 +123,14 @@ class Controller(Basic_model):
         a_dist = sess.run(self.output, feed_dict={self.state_plh: [state]})
         a_dist = a_dist[0]
         # epsilon-greedy
-        if np.random.rand() < explore_rate:
-            a = np.random.randint(len(a_dist))
-        else:
-            a = np.argmax(a_dist)
+        #if np.random.rand() < explore_rate:
+        #    a = np.random.randint(len(a_dist))
+        #else:
+        #    a = np.argmax(a_dist)
 
         # continuous
-        #a = np.random.choice(a_dist, p=a_dist)
-        #a = np.argmax(a_dist == a)
+        a = np.random.choice(a_dist, p=a_dist)
+        a = np.argmax(a_dist == a)
 
         action = np.zeros(len(a_dist), dtype='i')
         action[a] = 1

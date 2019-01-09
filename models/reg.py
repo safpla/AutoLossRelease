@@ -60,6 +60,7 @@ class Reg(Basic_model):
         self.previous_train_loss = [0] * self.config.num_pre_loss
         self.mag_mse_grad = 0
         self.mag_l1_grad = 0
+        self.checkpoint_dir = None
 
         # to control when to terminate the episode
         self.endurance = 0
@@ -131,6 +132,7 @@ class Reg(Basic_model):
             self.update_total = optimizer.apply_gradients(total_gvs)
 
             self.init = tf.global_variables_initializer()
+            self.saver = tf.train.Saver()
             self.mse_grad = [grad for grad, _ in mse_gvs]
             self.l1_grad = [grad for grad, _ in l1_gvs]
 
@@ -235,6 +237,8 @@ class Reg(Basic_model):
                 self.best_step = self.step_number[0]
                 self.best_loss = loss
                 self.endurance = 0
+                if not self.config.args.task_mode == 'train':
+                    self.save_model(step)
 
         if step > self.config.max_training_step:
             return True

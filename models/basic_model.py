@@ -60,7 +60,7 @@ class Basic_model():
         task_name = self.exp_name
         model_dir = self.config.model_dir
         task_dir = os.path.join(model_dir, task_name)
-        self.task_dir = task_dir
+        self.checkpoint_dir = task_dir
         if not os.path.exists(task_dir):
             os.mkdir(task_dir)
         save_path = os.path.join(task_dir, 'model')
