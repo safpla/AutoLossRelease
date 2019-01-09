@@ -329,7 +329,7 @@ class controller_designed():
         self.step = 0
         pass
 
-    def sample(self):
+    def sample(self, state):
         self.step += 1
         action = [0, 0]
         action[self.step % 2] = 1

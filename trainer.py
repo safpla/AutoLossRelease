@@ -32,17 +32,32 @@ def parse_args():
     parser.add_argument('--task_mode', required=True, type=str, help='task mode')
     parser.add_argument('--exp_name', required=True, type=str, help='name of this experiment')
     parser.add_argument('--load_ctrl', type=str, help='load pretrained controller model')
-    parser.add_argument('--save_ctrl', type=bool, default=False, help='whether to save the controller model')
+    parser.add_argument('--save_ctrl', type=bool, default=True, help='whether to save the controller model')
     parser.add_argument('--test_trials', type=int, default=10, help='how many trials to run in test')
     parser.add_argument('--baseline_trials', type=int, default=10, help='how many trials to run in baseline')
     parser.add_argument('--lambda_task', type=float, help='coefficient for L1 regularization in regression and classification task')
 
     return parser.parse_args()
+def arguments_checkout(config, args):
+    # ----Task name checking.----
+    if not args.task_name in ['reg', 'cls', 'gan', 'mnt', 'gan_cifar10']:
+        logger.exception('Unexcepted task name')
+        exit()
 
+    # ----Mode checking.----
+    if not args.task_mode in ['train', 'test', 'baseline', 'generate']:
+        logger.exception('Unexcepted mode')
+        exit()
+
+    # ----Arguments in test mode.----
+    if args.task_mode == 'test':
+        if not args.load_ctrl:
+            args.load_ctrl = os.path.join(config.model_dir, args.exp_name + '_ctrl')
 def discount_rewards(transitions, final_reward):
     # TODO(haowen) Final reward + step reward
     for i in range(len(transitions)):
         transitions[i]['reward'] += final_reward
+
 
 class Trainer():
     """ A class to wrap training code. """
@@ -97,6 +112,11 @@ class Trainer():
         for ix, grad in enumerate(gradBuffer):
             gradBuffer[ix] = grad * 0
 
+        # ----The epsilon decay schedule.----
+        epsilons = np.linspace(config.epsilon_start_ctrl,
+                               config.epsilon_end_ctrl,
+                               config.epsilon_decay_steps_ctrl)
+
         # ----Start episodes.----
         for ep in range(config.total_episodes):
             logger.info('=================')
@@ -110,10 +130,12 @@ class Trainer():
             transitions = []
 
             step = -1
+            epsilon = epsilons[min(ep, config.epsilon_decay_steps_ctrl-1)]
+            logger.info('epsilon={}'.format(epsilon))
             # ----Running one episode.----
             while True:
                 step += 1
-                action = model_ctrl.sample(state)
+                action = model_ctrl.sample(state, explore_rate=epsilon)
                 state_new, reward, dead = model_task.response(action)
                 # ----Record training details.----
                 transition = {'state': state,
@@ -147,7 +169,7 @@ class Trainer():
 
             # ----Update the controller.----
             final_reward, adv = model_task.get_final_reward()
-            reward_hist = discount_rewards(transitions, adv)
+            discount_rewards(transitions, adv)
             grads = model_ctrl.get_gradients(transitions)
             for idx, grad in enumerate(grads):
                 gradBuffer[idx] += grad
@@ -190,13 +212,15 @@ class Trainer():
             if args.task_name == 'reg':
                 loss_analyzer_toy(transitions)
                 loss = model_task.best_loss
-                if final_reward > best_reward:
-                    best_reward = final_reward
-                    best_loss = loss
-                    save_model_flag = True
-                    endurance = 0
-                else:
-                    endurance += 1
+                # compare results after enough exploration.
+                if ep > config.epsilon_decay_steps_ctrl:
+                    if final_reward > best_reward:
+                        best_reward = final_reward
+                        best_loss = loss
+                        save_model_flag = True
+                        endurance = 0
+                    else:
+                        endurance += 1
                 logger.info('best_loss: {}'.format(loss))
                 logger.info('lambda: {}'.format(config.lambda_task))
             elif args.task_name == 'cls':
@@ -257,7 +281,7 @@ class Trainer():
 
         state = model_task.get_state()
         for i in range(config.max_training_step):
-            action = model_ctrl.sample(state)
+            action = model_ctrl.sample(state, 0)
             state_new, _, dead = model_task.response(action)
             state = state_new
             if dead:
@@ -286,9 +310,10 @@ class Trainer():
         model_task = self.model_task
         model_task.initialize_weights()
         model_task.reset()
+        state = model_task.get_state()
         for i in range(config.max_training_step):
-            action = model_ctrl.sample()
-            _, _, dead = model_task.response(action)
+            action = model_ctrl.sample(state)
+            state, _, dead = model_task.response(action)
             if dead:
                 break
 
@@ -305,24 +330,17 @@ class Trainer():
 
 
 if __name__ == '__main__':
+    # ----Parsing arguments.----
     args = parse_args()
-
-    # ----Task name checking.----
-    if not args.task_name in ['reg', 'cls', 'gan', 'mnt', 'gan_cifar10']:
-        logger.exception('Unexcepted task name')
-        exit()
-
-    # ----Mode checking.----
-    if not args.task_mode in ['train', 'test', 'baseline', 'generate']:
-        logger.exception('Unexcepted mode')
-        exit()
 
     # ----Loading config file.----
     logger.info('Machine name: {}'.format(socket.gethostname()))
     config_path = os.path.join(root_path, 'config/' + args.task_name)
     config = utils.load_config(config_path)
-    config.args = args
+
+    arguments_checkout(config, args)
     utils.override_config(config, args)
+    config.args = args
 
     # ----Instantiate a trainer object.----
     trainer = Trainer(config, args)
@@ -336,20 +354,12 @@ if __name__ == '__main__':
         ## ----Testing----
         logger.info('TEST')
         test_metrics = []
-        if not args.test_trials:
-            logger.exception('Argument \'test_trials\' is required if \
-                             \'task_mode\' is \'test\'')
-            exit()
         for i in range(args.test_trials):
             test_metrics.append(trainer.test(args.load_ctrl))
         logger.info(test_metrics)
     elif args.task_mode == 'baseline':
         # ----Baseline----
         logger.info('BASELINE')
-        if not args.baseline_trials:
-            logger.exception('Argument \'baseline_trials\' is required if \
-                             \'task_mode\' is \'baseline\'')
-            exit()
         baseline_metrics = []
         for i in range(args.baseline_trials):
             baseline_metrics.append(trainer.baseline())

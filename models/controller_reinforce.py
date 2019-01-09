@@ -108,7 +108,7 @@ class Controller(Basic_model):
             self.init = tf.global_variables_initializer()
             self.saver = tf.train.Saver()
 
-    def sample(self, state, explore_rate=0, discrete=True):
+    def sample(self, state, explore_rate=0.5):
         #
         # Sample an action from a given state, probabilistically
 
@@ -121,35 +121,20 @@ class Controller(Basic_model):
         #
         sess = self.sess
         a_dist = sess.run(self.output, feed_dict={self.state_plh: [state]})
-        a = np.random.choice(a_dist[0], p=a_dist[0])
-        a = np.argmax(a_dist == a)
-
-        # ----Handcraft classifier----
-        #  ---Hard version---
-        #  Threshold varies in different tasks, which is related to the SNR
-        #  of the data
-        #  ------
-        #if state[0] > 1.2:
-        #    a = 1
-        #else:
-        #    a = 0
-        #mse_loss = state[2]
-        #l1_loss = state[3]
-        #if (l1_loss - mse_loss) / l1_loss > 0.01:
-        #    a = 1
-        #else:
-        #    a = 0
-        #if state[4] > -0.19:
-        #    a = 0
-        #else:
-        #    a = 1
-
-        action = np.zeros(len(a_dist[0]), dtype='i')
-        action[a] = 1
-        if discrete:
-            return action
+        a_dist = a_dist[0]
+        # epsilon-greedy
+        if np.random.rand() < explore_rate:
+            a = np.random.randint(len(a_dist))
         else:
-            return a_dist[0]
+            a = np.argmax(a_dist)
+
+        # continuous
+        #a = np.random.choice(a_dist, p=a_dist)
+        #a = np.argmax(a_dist == a)
+
+        action = np.zeros(len(a_dist), dtype='i')
+        action[a] = 1
+        return action
 
     def train_one_step(self, gradBuffer, lr):
         feed_dict = dict(zip(self.gradient_plhs, gradBuffer))

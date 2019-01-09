@@ -33,7 +33,7 @@ class Config():
         # Task model
         self.dim_input_task = 16
         self.dim_output_task = 1
-        self.lambda_task = 0.5
+        self.lambda_task = 0.4
 
         # Training task model
         self.batch_size = 200
@@ -52,12 +52,12 @@ class Config():
         self.dim_hidden_ctrl = 16
         self.dim_output_ctrl = 2
         self.reward_baseline_decay = 0.8
-        self.reward_c = 20000
+        self.reward_c = 2000
         # Set an max step reward, in case the improvement baseline is too small
         # and cause huge reward.
         self.reward_max_value = 20
         # TODO check out what this hp do
-        self.reward_step_ctrl = 0.1
+        self.reward_step_ctrl = 1
         self.logit_clipping_c = 2
 
         # Training controller
@@ -67,6 +67,9 @@ class Config():
         self.save_frequency_ctrl = 50
         self.max_endurance_ctrl = 50
         self.rl_method = 'reinforce'
+        self.epsilon_start_ctrl = 0.5
+        self.epsilon_end_ctrl = 0.1
+        self.epsilon_decay_steps_ctrl = 100
 
 
     def print_config(self, logger):
