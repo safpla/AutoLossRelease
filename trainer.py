@@ -288,13 +288,14 @@ class Trainer():
         model_task.reset()
         for i in range(config.max_training_step):
             action = model_ctrl.sample()
-            dead = model_task.response(action)
+            _, _, dead = model_task.response(action)
             if dead:
                 break
 
         if config.args.task_name == 'reg':
             loss, _, _ = model_task.valid(model_task.test_dataset)
-            logger.info('test_loss: {}'.format(loss))
+            logger.info('test_loss: {}, after {} steps of optimization'.\
+                        format(loss, i))
             return loss
 
     def generate(self, load_stud):

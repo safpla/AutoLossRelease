@@ -151,6 +151,8 @@ class Reg(Basic_model):
                 dataset = self.valid_ctrl_dataset
             elif self.config.args.task_mode == 'test':
                 dataset = self.valid_task_dataset
+            elif self.config.args.task_mode == 'baseline':
+                dataset = self.valid_task_dataset
             else:
                 logger.exception('Unexcepted task_mode: {}'.\
                                 format(self.config.args.task_mode))
@@ -177,6 +179,8 @@ class Reg(Basic_model):
         if self.config.args.task_mode == 'train':
             dataset = self.train_ctrl_dataset
         elif self.config.args.task_mode == 'test':
+            dataset = self.train_task_dataset
+        elif self.config.args.task_mode == 'baseline':
             dataset = self.train_task_dataset
         else:
             logger.exception('Unexcepted mode: {}'.\
@@ -321,4 +325,12 @@ class Reg(Basic_model):
         return np.array(state, dtype='f')
 
 class controller_designed():
-    pass
+    def __init__(self):
+        self.step = 0
+        pass
+
+    def sample(self):
+        self.step += 1
+        action = [0, 0]
+        action[self.step % 2] = 1
+        return np.array(action)

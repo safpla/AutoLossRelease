@@ -33,7 +33,7 @@ class Config():
         # Task model
         self.dim_input_task = 16
         self.dim_output_task = 1
-        self.lambda_task = 0.2
+        self.lambda_task = 0.5
 
         # Training task model
         self.batch_size = 200
@@ -41,7 +41,7 @@ class Config():
         self.valid_frequency_task = 10
         self.stop_strategy_task = 'exceeding_endurance'
         self.max_endurance_task = 100
-        self.max_training_step = 10000
+        self.max_training_step = 20000
 
         # Controller
         self.controller_model_name = '2layer_logits_clipping'
