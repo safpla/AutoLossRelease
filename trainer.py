@@ -138,18 +138,14 @@ class Trainer():
                               'extra_info': extra_info}
                 transitions.append(transition)
 
-                # TODO delete
-                #if 'gan' in args.task_name:
-                #    transition['gen_cost'] = model_task.ema_gen_cost
-                #    transition['disc_cost_real'] = model_task.ema_disc_cost_real
-                #    transition['disc_cost_fake'] = model_task.ema_disc_cost_fake
-                #else:
-                #    transition['valid_loss'] = model_task.previous_valid_loss[-1]
-                #    transition['train_loss'] = model_task.previous_train_loss[-1]
-
                 state = state_new
                 if dead:
                     break
+
+            # Reinitialize the controller if the output of the controller
+            # collapse to one specific action.
+            if model_task.collapse:
+                model_ctrl.initialize_weights()
 
             # ----Use the best model to get inception score on a
             #     larger number of samples to reduce the variance of reward----
@@ -188,6 +184,8 @@ class Trainer():
 
             if args.task_name == 'reg':
                 loss_analyzer_reg(transitions)
+            elif args.task_name == 'gan':
+                loss_analyzer_gan(transitions)
 
             logger.info('--------------------------')
 

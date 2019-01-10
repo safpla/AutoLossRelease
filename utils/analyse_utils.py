@@ -123,7 +123,10 @@ def loss_analyzer_reg(transitions):
     #logger.info('mse: {}'.format(reward_mse_mean_trace))
     #logger.info('l1: {}'.format(reward_l1_mean_trace))
 
-def loss_analyzer_gan(actions, rewards):
+def loss_analyzer_gan(transitions):
+    actions = [trans['action'] for trans in transitions]
+    rewards = [trans['reward'] for trans in transitions]
+
     total_steps = len(actions)
     logger.info('total_steps: {}'.format(total_steps))
 

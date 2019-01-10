@@ -56,7 +56,7 @@ class Basic_model():
         logger.info('Loading pretrained model from: ' + model_checkpoint_path)
         self.saver.restore(self.sess, model_checkpoint_path)
 
-    def save_model(self, step):
+    def save_model(self, step, mute=False):
         task_name = self.exp_name
         model_dir = self.config.model_dir
         task_dir = os.path.join(model_dir, task_name)
@@ -64,7 +64,8 @@ class Basic_model():
         if not os.path.exists(task_dir):
             os.mkdir(task_dir)
         save_path = os.path.join(task_dir, 'model')
-        logger.info('Save model at {}'.format(save_path))
+        if not mute:
+            logger.info('Save model at {}'.format(save_path))
         self.saver.save(self.sess, save_path, global_step=step)
 
     def print_weights(self, tvars=None):

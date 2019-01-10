@@ -80,10 +80,9 @@ class Gan(Basic_model):
 
         # to control when to terminate the episode
         self.endurance = 0
-        self.inps_ema = 0
         # The bigger the performance is, the better. In this case, performance
-        # is the moving average of inception score. Naming it as performance in
-        # order to be compatible with other tasks.
+        # is the inception score. Naming it as performance in order to be
+        # compatible with other tasks.
         self.best_performance = -1e10
         self.collapse = False
         self.previous_action = -1
@@ -409,16 +408,17 @@ class Gan(Basic_model):
             inception_score = self.get_inception_score(self.config.inps_batches)
             inps = inception_score[0]
             self.inception_score = inps
-            decay = self.config.metric_decay
-            if self.inps_ema > 0:
-                self.inps_ema = self.inps_ema * decay + inps * (1 - decay)
-            else:
-                self.inps_ema = inps
-            if self.inps_ema > self.best_performance:
+            logger.info('Step: {}, inps: {}'.format(step, inps))
+            #decay = self.config.metric_decay
+            #if self.inps_ema > 0:
+            #    self.inps_ema = self.inps_ema * decay + inps * (1 - decay)
+            #else:
+            #    self.inps_ema = inps
+            if self.inception_score > self.best_performance:
                 self.best_step = self.step_number
-                self.best_performance = self.inps_ema
+                self.best_performance = self.inception_score
                 self.endurance = 0
-                self.save_model(step)
+                self.save_model(step, mute=True)
 
         if step > self.config.max_training_step:
             return True
@@ -429,7 +429,7 @@ class Gan(Basic_model):
 
     def get_step_reward(self, step):
         step = int(step / self.config.print_frequency_ctrl) - 1
-        inps = self.inps_ema
+        inps = self.inception_score
         reward = self.config.reward_c * inps ** 2
         if self.metrics_track_baseline[step] == -1:
             self.metrics_track_baseline[step] = inps
