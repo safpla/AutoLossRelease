@@ -183,7 +183,7 @@ class Trainer():
             logger.info('----LOG FOR EPISODE {}----'.format(ep))
             logger.info('Performance in this episode: {}'.\
                         format(model_task.best_performance))
-            logger.info('Best performance tile now  : {}'.\
+            logger.info('Best performance till now  : {}'.\
                         format(best_performance))
 
             if args.task_name == 'reg':

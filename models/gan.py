@@ -45,7 +45,7 @@ class Gan(Basic_model):
         self._build_placeholder()
         self._build_graph()
 
-        self.final_inps_baseline = None # ema of final_inps over episodes
+        self.reward_baseline = None
         # ema of metrics track over episodes
         n_steps = int(config.max_training_step / config.valid_frequency_task)
         self.metrics_track_baseline = -np.ones([n_steps])
@@ -80,10 +80,10 @@ class Gan(Basic_model):
 
         # to control when to terminate the episode
         self.endurance = 0
-        self.inps_baseline = 0
+        self.inps_ema = 0
         # The bigger the performance is, the better. In this case, performance
-        # is the inception score. Naming it as performance in order to be
-        # compatible with other tasks.
+        # is the moving average of inception score. Naming it as performance in
+        # order to be compatible with other tasks.
         self.best_performance = -1e10
         self.collapse = False
         self.previous_action = -1
@@ -410,22 +410,15 @@ class Gan(Basic_model):
             inps = inception_score[0]
             self.inception_score = inps
             decay = self.config.metric_decay
-            if self.inps_baseline > 0:
-                self.inps_baseline = self.inps_baseline * decay \
-                                     + inps * (1 - decay)
+            if self.inps_ema > 0:
+                self.inps_ema = self.inps_ema * decay + inps * (1 - decay)
             else:
-                self.inps_baseline = inps
-            if self.inps_baseline > self.best_performance:
-                logger.info('step: {}, new best result: {}'.\
-                            format(step, self.inps_baseline))
+                self.inps_ema = inps
+            if self.inps_ema > self.best_performance:
                 self.best_step = self.step_number
-                self.best_performance = self.inps_baseline
+                self.best_performance = self.inps_ema
                 self.endurance = 0
                 self.save_model(step)
-
-            logger.info('----step{}----'.format(step))
-            logger.info('inception_score: {}'.format(inception_score))
-            logger.info('inps_baseline: {}'.format(self.inps_baseline))
 
         if step > self.config.max_training_step:
             return True
@@ -436,7 +429,7 @@ class Gan(Basic_model):
 
     def get_step_reward(self, step):
         step = int(step / self.config.print_frequency_ctrl) - 1
-        inps = self.inps_baseline
+        inps = self.inps_ema
         reward = self.config.reward_c * inps ** 2
         if self.metrics_track_baseline[step] == -1:
             self.metrics_track_baseline[step] = inps
@@ -458,18 +451,20 @@ class Gan(Basic_model):
             return 0, -self.config.reward_max_value
         inps = self.best_performance
         reward = self.config.reward_c * inps ** 2
-        if self.final_inps_baseline is None:
-            self.final_inps_baseline = inps
-        baseline_inps = self.final_inps_baseline
-        baseline_reward = self.config.reward_c * baseline_inps ** 2
-        decay = self.config.inps_baseline_decay
-        adv = reward - baseline_reward
+
+        # Calculate baseline
+        if self.reward_baseline is None:
+            self.reward_baseline = reward
+        else:
+            decay = self.config.reward_baseline_decay
+            self.reward_baseline = decay * self.reward_baseline\
+                + (1 - decay) * reward
+
+        # Calcuate advantage
+        adv = reward - self.reward_baseline
         # reward_min_value < abs(adv) < reward_max_value
         adv = math.copysign(max(self.config.reward_min_value, abs(adv)), adv)
         adv = math.copysign(min(self.config.reward_max_value, abs(adv)), adv)
-        # ----Shift average----
-        self.final_inps_baseline = decay * self.final_inps_baseline\
-            + (1 - decay) * inps
         return reward, adv
 
     def get_inception_score(self, num_batches, splits=None):

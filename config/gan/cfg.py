@@ -52,7 +52,7 @@ class Config():
         self.dim_hidden_ctrl = 16
         self.dim_output_ctrl = 2
 
-        self.inps_baseline_decay = 0.9
+        self.reward_baseline_decay = 0.9
         self.reward_c = 10
         # Set an max step reward, in case the improvement baseline is too small
         # and cause huge reward.
