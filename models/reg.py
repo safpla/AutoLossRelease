@@ -15,6 +15,14 @@ from models.basic_model import Basic_model
 logger = utils.get_logger()
 
 class Reg(Basic_model):
+    '''
+    Public variables (all task models should have these public variables):
+        self.extra_info
+        self.checkpoint_dir
+        self.best_performance
+        self.test_dataset
+    '''
+
     def __init__(self, config, exp_name='new_exp'):
         self.config = config
         self.graph = tf.Graph()
@@ -64,7 +72,9 @@ class Reg(Basic_model):
 
         # to control when to terminate the episode
         self.endurance = 0
-        self.best_loss = 1e10
+        # The bigger, the better. In this case, performance is negative loss.
+        # Naming it as performance in order to be compatible with other tasks.
+        self.best_performance = -1e10
         self.improve_baseline = None
 
     def _build_placeholder(self):
@@ -216,6 +226,10 @@ class Reg(Basic_model):
         self.mag_mse_grad = self.get_grads_magnitude(mse_grad)
         self.mag_l1_grad = self.get_grads_magnitude(l1_grad)
 
+        # Public variable
+        self.extra_info = {'valid_loss': self.previous_valid_loss[-1],
+                           'train_loss': self.previous_train_loss[-1]}
+
         reward = self.get_step_reward()
         # ----Early stop and record best result.----
         dead = self.check_terminate()
@@ -233,9 +247,9 @@ class Reg(Basic_model):
         if step % self.config.valid_frequency_task == 0:
             self.endurance += 1
             loss, _, _ = self.valid()
-            if loss < self.best_loss:
+            if -loss > self.best_performance:
                 self.best_step = self.step_number[0]
-                self.best_loss = loss
+                self.best_performance = -loss
                 self.endurance = 0
                 if not self.config.args.task_mode == 'train':
                     self.save_model(step)
@@ -268,20 +282,27 @@ class Reg(Basic_model):
         return math.copysign(value, improve) * self.config.reward_step_ctrl
 
     def get_final_reward(self):
-        assert self.best_loss < 1e10 - 1
-        loss_mse = self.best_loss
+        '''
+        Return:
+            reward: real reward
+            adv: advantage, subtract the baseline from reward and then normalize it
+        '''
+        assert self.best_performance > -1e10 + 1
+        loss_mse = -self.best_performance
         reward = self.config.reward_c / loss_mse
 
+        # Calculate baseline
         if self.reward_baseline is None:
             self.reward_baseline = reward
-        logger.info('reward: {}'.format(reward))
-        logger.info('reward_baseline: {}'.format(self.reward_baseline))
-        decay = self.config.reward_baseline_decay
+        else:
+            decay = self.config.reward_baseline_decay
+            self.reward_baseline = decay * self.reward_baseline\
+                + (1 - decay) * reward
+
+        # Calculate advantage
         adv = reward - self.reward_baseline
         adv = min(adv, self.config.reward_max_value)
         adv = max(adv, -self.config.reward_max_value)
-        self.reward_baseline = decay * self.reward_baseline\
-            + (1 - decay) * reward
         return reward, adv
 
     def get_state(self):

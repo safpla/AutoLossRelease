@@ -19,6 +19,7 @@ class Config():
             self.model_dir = '/datasets/BigLearning/haowen/autoLoss/saved_models'
             self.data_dir = '/datasets/BigLearning/haowen/mnist'
             self.save_images_dir = '/datasets/BigLearning/haowen/autoLoss/saved_images'
+        self.pretrained_mnist_checkpoint_dir = os.path.join(self.model_dir, 'mnist_classification')
 
         # Data
 
@@ -64,14 +65,12 @@ class Config():
         self.lr_ctrl = 0.001
         self.total_episodes = 100
         self.update_frequency_ctrl = 1
+        self.print_frequency_ctrl = 100
         self.save_frequency_ctrl = 100
         self.max_endurance_ctrl = 100
         self.rl_method = 'reinforce'
         self.state_decay = 0.9
         self.metric_decay = 0.8
-        #self.epsilon_start_ctrl = 0.5
-        #self.epsilon_end_ctrl = 0.1
-        #self.epsilon_decay_steps_ctrl = 100
 
     def print_config(self, logger):
         for key, value in vars(self).items():

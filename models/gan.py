@@ -17,6 +17,13 @@ from models.basic_model import Basic_model
 logger = utils.get_logger()
 
 class Gan(Basic_model):
+    '''
+    Public variables (all task models should have these public variables):
+        self.extra_info
+        self.checkpoint_dir
+        self.best_performance
+        self.test_dataset
+    '''
     def __init__(self, config, exp_name='new_exp_gan', arch=None):
         self.config = config
         self.graph = tf.Graph()
@@ -73,8 +80,11 @@ class Gan(Basic_model):
 
         # to control when to terminate the episode
         self.endurance = 0
-        self.best_inception_score = 0
         self.inps_baseline = 0
+        # The bigger the performance is, the better. In this case, performance
+        # is the inception score. Naming it as performance in order to be
+        # compatible with other tasks.
+        self.best_performance = -1e10
         self.collapse = False
         self.previous_action = -1
         self.same_action_count = 0
@@ -228,6 +238,7 @@ class Gan(Basic_model):
             return tf.reshape(output, [-1])
 
     def train(self, save_model=False):
+        # TODO: haven't go through this part
         sess = self.sess
         config = self.config
         batch_size = config.batch_size
@@ -305,7 +316,7 @@ class Gan(Basic_model):
              action: one hot encoding of actions
 
          Returns:
-             state: shape = [dim_state_rl]
+             state: shape = [dim_input_ctrl]
              reward: shape = [1]
              dead: boolean
         """
@@ -357,6 +368,10 @@ class Gan(Basic_model):
             self.ema_disc_cost_fake = self.ema_disc_cost_fake * alpha\
                 + disc_cost_fake * (1 - alpha)
 
+        self.extra_info = {'gen_cost': self.ema_gen_cost,
+                           'disc_cost_real': self.ema_disc_cost_real,
+                           'disc_cost_fake': self.ema_disc_cost_fake}
+
         reward = 0
         # ----Early stop and record best result.----
         dead = self.check_terminate()
@@ -364,11 +379,11 @@ class Gan(Basic_model):
         return state, reward, dead
 
     def update_inception_score(self, score):
-        self.best_inception_score = score
+        self.best_performance = score
 
     def get_state(self):
         if self.step_number == 0:
-            state = [0] * self.config.dim_state_rl
+            state = [0] * self.config.dim_input_ctrl
         else:
             state = [
                      math.log(self.mag_disc_grad / self.mag_gen_grad),
@@ -400,11 +415,11 @@ class Gan(Basic_model):
                                      + inps * (1 - decay)
             else:
                 self.inps_baseline = inps
-            if self.inps_baseline > self.best_inception_score:
+            if self.inps_baseline > self.best_performance:
                 logger.info('step: {}, new best result: {}'.\
                             format(step, self.inps_baseline))
                 self.best_step = self.step_number
-                self.best_inception_score = self.inps_baseline
+                self.best_performance = self.inps_baseline
                 self.endurance = 0
                 self.save_model(step)
 
@@ -420,7 +435,7 @@ class Gan(Basic_model):
         return False
 
     def get_step_reward(self, step):
-        step = int(step / self.config.print_frequency_stud) - 1
+        step = int(step / self.config.print_frequency_ctrl) - 1
         inps = self.inps_baseline
         reward = self.config.reward_c * inps ** 2
         if self.metrics_track_baseline[step] == -1:
@@ -441,7 +456,7 @@ class Gan(Basic_model):
     def get_final_reward(self):
         if self.collapse:
             return 0, -self.config.reward_max_value
-        inps = self.best_inception_score
+        inps = self.best_performance
         reward = self.config.reward_c * inps ** 2
         if self.final_inps_baseline is None:
             self.final_inps_baseline = inps
@@ -478,7 +493,6 @@ class Gan(Basic_model):
         feed_dict = {self.noise: self.fixed_noise_128,
                      self.is_training: False}
         samples = self.sess.run(self.fake_data, feed_dict=feed_dict)
-        #samples = ((samples+1.)*255./2.).astype('int32')
         checkpoint_dir = os.path.join(self.config.save_images_dir, self.exp_name)
         if not os.path.exists(checkpoint_dir):
             os.mkdir(checkpoint_dir)

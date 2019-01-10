@@ -16,10 +16,10 @@ def get_reward(losses):
             neg += 1
     return zero, pos, neg
 
-def loss_analyzer_toy(transitions):
+def loss_analyzer_reg(transitions):
     actions = [trans['action'] for trans in transitions]
-    valid_losses = [trans['valid_loss'] for trans in transitions]
-    train_losses = [trans['train_loss'] for trans in transitions]
+    valid_losses = [trans['extra_info']['valid_loss'] for trans in transitions]
+    train_losses = [trans['extra_info']['train_loss'] for trans in transitions]
     rewards = [trans['reward'] for trans in transitions]
 
     total_steps = len(actions)

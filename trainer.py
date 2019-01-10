@@ -12,14 +12,9 @@ from time import gmtime, strftime
 import argparse
 
 from models import controller_reinforce
-from models import reg
-#from models import cls
-#from models import gan
-#from models import gan_grid
-#from models import gan_cifar10
 import utils
-from utils.analyse_utils import loss_analyzer_toy
-#from utils.analyse_utils import loss_analyzer_gan
+from utils.analyse_utils import loss_analyzer_reg
+from utils.analyse_utils import loss_analyzer_gan
 import socket
 
 
@@ -38,6 +33,7 @@ def parse_args():
     parser.add_argument('--lambda_task', type=float, help='coefficient for L1 regularization in regression and classification task')
 
     return parser.parse_args()
+
 def arguments_checkout(config, args):
     # ----Task name checking.----
     if not args.task_name in ['reg', 'cls', 'gan', 'mnt', 'gan_cifar10']:
@@ -53,6 +49,7 @@ def arguments_checkout(config, args):
     if args.task_mode == 'test':
         if not args.load_ctrl:
             args.load_ctrl = os.path.join(config.model_dir, args.exp_name + '_ctrl')
+
 def discount_rewards(transitions, final_reward):
     # TODO(haowen) Final reward + step reward
     for i in range(len(transitions)):
@@ -74,12 +71,16 @@ class Trainer():
 
         self.model_ctrl = controller_reinforce.Controller(config, exp_name+'_ctrl')
         if args.task_name == 'reg':
+            from models import reg
             self.model_task = reg.Reg(config, exp_name+'_reg')
         elif args.task_name == 'cls':
+            from models import cls
             self.model_task = cls.Cls(config, exp_name+'_cls')
         elif args.task_name == 'gan':
-            self.model_task = gan.Gan(config, exp_name+'_gan', arch=arch)
+            from models import gan
+            self.model_task = gan.Gan(config, exp_name+'_gan')
         elif args.task_name == 'gan_cifar10':
+            from models import gan_cifar10
             self.model_task = gan_cifar10.Gan_cifar10(config,
                                                       exp_name+'_gan_cifar10')
         elif args.task_name == 'mnt':
@@ -94,11 +95,9 @@ class Trainer():
         lr_task = config.lr_task
         model_ctrl = self.model_ctrl
         model_task = self.model_task
-        best_reward = -1e5 # A big negative initial value
-        best_acc = 0
-        best_loss = 0
-        best_inps = 0
-        best_best_inps = 0
+        # The bigger the performance is, the better.
+        best_performance = -1e10
+        # Record the number of latest episodes without a better result
         endurance = 0
 
         # ----Initialize controllor.----
@@ -111,11 +110,6 @@ class Trainer():
         gradBuffer = model_ctrl.get_weights()
         for ix, grad in enumerate(gradBuffer):
             gradBuffer[ix] = grad * 0
-
-        # ----The epsilon decay schedule.----
-        epsilons = np.linspace(config.epsilon_start_ctrl,
-                               config.epsilon_end_ctrl,
-                               config.epsilon_decay_steps_ctrl)
 
         # ----Start episodes.----
         for ep in range(config.total_episodes):
@@ -130,27 +124,28 @@ class Trainer():
             transitions = []
 
             step = -1
-            epsilon = epsilons[min(ep, config.epsilon_decay_steps_ctrl-1)]
-            logger.info('epsilon={}'.format(epsilon))
             # ----Running one episode.----
+            logger.info('TRAINING TASK MODEL...')
             while True:
                 step += 1
-                action = model_ctrl.sample(state, explore_rate=epsilon)
+                action = model_ctrl.sample(state)
                 state_new, reward, dead = model_task.response(action)
+                extra_info = model_task.extra_info
                 # ----Record training details.----
                 transition = {'state': state,
                               'action': action,
-                              'reward': reward}
+                              'reward': reward,
+                              'extra_info': extra_info}
                 transitions.append(transition)
 
                 # TODO delete
-                if 'gan' in args.task_name:
-                    transition['gen_cost'] = model_task.ema_gen_cost
-                    transition['disc_cost_real'] = model_task.ema_disc_cost_real
-                    transition['disc_cost_fake'] = model_task.ema_disc_cost_fake
-                else:
-                    transition['valid_loss'] = model_task.previous_valid_loss[-1]
-                    transition['train_loss'] = model_task.previous_train_loss[-1]
+                #if 'gan' in args.task_name:
+                #    transition['gen_cost'] = model_task.ema_gen_cost
+                #    transition['disc_cost_real'] = model_task.ema_disc_cost_real
+                #    transition['disc_cost_fake'] = model_task.ema_disc_cost_fake
+                #else:
+                #    transition['valid_loss'] = model_task.previous_valid_loss[-1]
+                #    transition['train_loss'] = model_task.previous_train_loss[-1]
 
                 state = state_new
                 if dead:
@@ -164,75 +159,37 @@ class Trainer():
                 inps_test = model_task.get_inception_score(5000)
                 logger.info('inps_test: {}'.format(inps_test))
                 model_task.update_inception_score(inps_test[0])
-            else:
-                logger.info('task model hasn\'t been saved before')
 
             # ----Update the controller.----
-            final_reward, adv = model_task.get_final_reward()
+            # We actually use the advantage as the final reward
+            _, adv = model_task.get_final_reward()
             discount_rewards(transitions, adv)
             grads = model_ctrl.get_gradients(transitions)
             for idx, grad in enumerate(grads):
                 gradBuffer[idx] += grad
 
             if ep % config.update_frequency_ctrl == (config.update_frequency_ctrl - 1):
-                logger.info('UPDATE CONTROLLOR')
-                logger.info('lr_ctrl: {}'.format(lr_ctrl))
+                logger.info('UPDATING CONTROLLOR...')
                 model_ctrl.train_one_step(gradBuffer, lr_ctrl)
 
+            # Printing training results and saving model_ctrl
             save_model_flag = False
-            if args.task_name == 'reg':
-                loss_analyzer_toy(transitions)
-                loss = model_task.best_loss
-                # compare results after enough exploration.
-                if ep > config.epsilon_decay_steps_ctrl:
-                    if final_reward > best_reward:
-                        best_reward = final_reward
-                        best_loss = loss
-                        save_model_flag = True
-                        endurance = 0
-                    else:
-                        endurance += 1
-                logger.info('best_loss: {}'.format(loss))
-                logger.info('lambda: {}'.format(config.lambda_task))
-            elif args.task_name == 'cls':
-                loss_analyzer_toy(action_hist, valid_loss_hist,
-                                  train_loss_hist, reward_hist)
-                acc = model_task.best_acc
-                loss = model_task.best_loss
-                if final_reward > best_reward:
-                    best_reward = final_reward
-                    best_acc = acc
-                    best_loss = loss
-                    save_model_flag = True
-                    enduranc = 0
-                else:
-                    endurance += 1
-                logger.info('acc: {}'.format(acc))
-                logger.info('best_acc: {}'.format(best_acc))
-                logger.info('best_loss: {}'.format(loss))
-            elif args.task_name == 'gan' or\
-                args.task_name == 'gan_cifar10':
-                loss_analyzer_gan(action_hist, reward_hist)
-                best_inps = model_task.best_inception_score
-                if final_reward > best_reward:
-                    best_reward = final_reward
-                    best_best_inps = best_inps
-                    save_model_flag = True
-                logger.info('best_inps: {}'.format(best_inps))
-                logger.info('best_best_inps: {}'.format(best_best_inps))
-                logger.info('final_inps_baseline: {}'.\
-                            format(model_task.final_inps_baseline))
-            elif args.task_name == 'gan_grid':
-                loss_analyzer_gan(action_hist, reward_hist)
-                hq = model_task.best_hq
-                if final_reward > best_reward:
-                    best_reward = final_reward
-                    best_hq = hq
-                    save_model_flag = True
-                logger.info('hq: {}'.format(hq))
-                logger.info('best_hq: {}'.format(best_hq))
+            if model_task.best_performance > best_performance:
+                best_performance = model_task.best_performance
+                save_model_flag = True
+                endurance = 0
+            else:
+                endurance += 1
+            logger.info('----LOG FOR EPISODE {}----'.format(ep))
+            logger.info('Performance in this episode: {}'.\
+                        format(model_task.best_performance))
+            logger.info('Best performance tile now  : {}'.\
+                        format(best_performance))
 
-            logger.info('adv: {}'.format(adv))
+            if args.task_name == 'reg':
+                loss_analyzer_reg(transitions)
+
+            logger.info('--------------------------')
 
             if save_model_flag and save_ctrl:
                     model_ctrl.save_model(ep)
@@ -251,7 +208,7 @@ class Trainer():
         state = model_task.get_state()
         actions = np.array([0, 0])
         for i in range(config.max_training_step):
-            action = model_ctrl.sample(state, 0.1)
+            action = model_ctrl.sample(state)
             actions += np.array(action)
             state_new, _, dead = model_task.response(action)
             state = state_new
