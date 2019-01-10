@@ -1,6 +1,6 @@
-AutoLoss: Learning Discrete Schedule for Alternate Optimization
+AutoLoss: Learning Discrete Schedules for Alternate Optimization
 ======================
-Code for reproducing experiments in ["AutoLoss: Learning Discrete Schedule for Alternate Optimization"] (https://arxiv.org/abs/1810.02442).
+Code for reproducing experiments in [AutoLoss: Learning Discrete Schedules for Alternate Optimization](https://arxiv.org/abs/1810.02442).
 
 ## Requirements
 ```
