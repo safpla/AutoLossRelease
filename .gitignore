@@ -17,7 +17,7 @@ htmlcov
 
 # Python
 *.py[co]
-**/__pycache__/
+__pycache__/
 
 # Docs
 docs/_build
