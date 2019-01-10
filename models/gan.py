@@ -494,3 +494,37 @@ class Gan(Basic_model):
         save_path = os.path.join(checkpoint_dir, 'images_{}.jpg'.format(step))
         save_images.save_images(samples.reshape((-1, 28, 28, 1)), save_path)
 
+
+class controller_designed():
+    def __init__(self, config=None):
+        self.step = 0
+        self.config = config
+
+    def sample(self, state):
+        self.step += 1
+        action = [0, 0]
+        disc = self.config.disc_iters
+        gen = self.config.gen_iters
+        if self.step % (disc + gen) < gen:
+            action[0] =1
+        else:
+            action[1] = 1
+        return np.array(action)
+
+    def initialize_weights(self):
+        pass
+
+    def load_model(self, a):
+        pass
+
+    def get_weights(self):
+        return [0]
+
+    def get_gradients(self, a):
+        return [0]
+
+    def train_one_step(self, a, b):
+        pass
+
+    def save_model(self, a):
+        pass

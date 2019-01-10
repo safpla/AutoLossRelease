@@ -6,6 +6,7 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import numpy as np
 import math
+import os
 
 from dataio.dataset import Dataset
 import utils
@@ -76,10 +77,13 @@ class Cls(Basic_model):
         self.previous_train_acc = [0] * self.config.num_pre_loss
         self.previous_valid_loss = [0] * self.config.num_pre_loss
         self.previous_train_loss = [0] * self.config.num_pre_loss
+        self.mag_ce_grad = 0
+        self.mag_l1_grad = 0
         self.checkpoint_dir = None
 
         # to control when to terminate the episode
         self.endurance = 0
+        self.collapse = False
         # The bigger the performance is, the better. In this case, performance
         # is accuracy. Naming it as performance in order to be compatible with
         # other tasks.
@@ -130,15 +134,19 @@ class Cls(Basic_model):
             self.loss_total = self.loss_ce + self.loss_l1
 
             # ----Define update operation.----
-            self.update_ce = tf.train.GradientDescentOptimizer(lr).\
-                minimize(self.loss_ce)
-            self.update_l1 = tf.train.GradientDescentOptimizer(lr).\
-                minimize(self.loss_l1)
-            self.update_total = tf.train.GradientDescentOptimizer(lr).\
-                minimize(self.loss_total)
+            optimizer = tf.train.AdamOptimizer(lr)
+            ce_gvs = optimizer.compute_gradients(self.loss_ce, tvars)
+            l1_gvs = optimizer.compute_gradients(self.loss_l1, tvars)
+            total_gvs = optimizer.compute_gradients(self.loss_total, tvars)
+            self.update_ce = optimizer.apply_gradients(ce_gvs)
+            self.update_l1 = optimizer.apply_gradients(l1_gvs)
+            self.update_total = optimizer.apply_gradients(total_gvs)
             self.update = [self.update_ce, self.update_l1]
+
             self.init = tf.global_variables_initializer()
             self.saver = tf.train.Saver()
+            self.ce_grad = [grad for grad, _ in ce_gvs]
+            self.l1_grad = [grad for grad, _ in l1_gvs]
 
     def valid(self, dataset=None):
         if not dataset:
@@ -159,7 +167,7 @@ class Cls(Basic_model):
         [loss_ce, acc, pred, gdth] = self.sess.run(fetch, feed_dict=feed_dict)
         return loss_ce, acc, pred, gdth
 
-    def response(self, action, lr, mode='TRAIN'):
+    def response(self, action):
         """ Given an action, return the new state, reward and whether dead
 
         Args:
@@ -189,8 +197,8 @@ class Cls(Basic_model):
         a = np.argmax(np.array(action))
         sess.run(self.update[a], feed_dict=feed_dict)
 
-        fetch = [self.loss_ce, self.loss_l1, self.accuracy]
-        loss_ce, loss_l1, acc = sess.run(fetch, feed_dict=feed_dict)
+        fetch = [self.loss_ce, self.loss_l1, self.accuracy, self.ce_grad, self.l1_grad]
+        loss_ce, loss_l1, acc, ce_grad, l1_grad = sess.run(fetch, feed_dict=feed_dict)
         valid_loss, valid_acc, _, _ = self.valid()
         train_loss, train_acc = loss_ce, acc
 
@@ -206,6 +214,8 @@ class Cls(Basic_model):
             + [valid_acc.tolist()]
         self.previous_train_acc = self.previous_train_acc[1:]\
             + [train_acc.tolist()]
+        self.mag_ce_grad = self.get_grads_magnitude(ce_grad)
+        self.mag_l1_grad = self.get_grads_magnitude(l1_grad)
 
         # Public variable
         self.extra_info = {'valid_loss': valid_loss,
@@ -229,6 +239,7 @@ class Cls(Basic_model):
         if step % self.config.valid_frequency_task == 0:
             self.endurance += 1
             loss, acc, _, _ = self.valid()
+            logger.info('step: {}, accuracy: {}'.format(step, acc))
             if acc > self.best_performance:
                 self.best_step = self.step_number[0]
                 self.best_performance = acc
@@ -318,10 +329,22 @@ class Cls(Basic_model):
         state3 = 1 + math.log(l1_loss + 1e-5) / 12
 
         # train_acc, valid_acc and their difference
-        state4 = self.previous_train_acc[-1]
-        state5 = self.previous_valid_acc[-1]
-        state6 = state4 - state5
+        state4 = self.previous_train_acc[-1] - self.previous_valid_acc[-1]
 
-        state = [state0, state1, state2, state3, state4, state5, state6]
+        # difference between magnitude of ce gradient and magnitude of l1
+        # gradient
+        state5 = self.mag_ce_grad - self.mag_l1_grad
+
+        state = [state0, state1, state2, state3, state4, state5]
         return np.array(state, dtype='f')
 
+class controller_designed():
+    def __init__(self, config=None):
+        self.step = 0
+        self.config = config
+
+    def sample(self, state):
+        self.step += 1
+        action = [0, 0]
+        action[self.step % 2] = 1
+        return np.array(action)

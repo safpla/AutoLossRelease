@@ -31,6 +31,8 @@ def parse_args():
     parser.add_argument('--test_trials', type=int, default=10, help='how many trials to run in test')
     parser.add_argument('--baseline_trials', type=int, default=10, help='how many trials to run in baseline')
     parser.add_argument('--lambda_task', type=float, help='coefficient for L1 regularization in regression and classification task')
+    parser.add_argument('--disc_iters', type=int, help='GANs, discrimintor updating iterations')
+    parser.add_argument('--gen_iters', type=int, help='GANs, generator updating iterations')
 
     return parser.parse_args()
 
@@ -70,6 +72,7 @@ class Trainer():
         logger.info('exp_name: {}'.format(exp_name))
 
         self.model_ctrl = controller_reinforce.Controller(config, exp_name+'_ctrl')
+
         if args.task_name == 'reg':
             from models import reg
             self.model_task = reg.Reg(config, exp_name+'_reg')
@@ -186,11 +189,14 @@ class Trainer():
                 loss_analyzer_reg(transitions)
             elif args.task_name == 'gan':
                 loss_analyzer_gan(transitions)
+            elif args.task_name == 'cls':
+                loss_analyzer_reg(transitions)
 
             logger.info('--------------------------')
 
             if save_model_flag and save_ctrl:
-                    model_ctrl.save_model(ep)
+                model_ctrl.save_model(ep)
+            print(endurance)
             if endurance > config.max_endurance_ctrl:
                 break
 
@@ -219,9 +225,15 @@ class Trainer():
             logger.info('test_loss: {}'.format(loss))
             return loss
         elif config.args.task_name == 'cls':
-            raise NotImplementedError
+            model_task.load_model()
+            loss, acc, _, _ = model_task.valid(model_task.test_dataset)
+            logger.info('test_loss: {}, test_acc: {}'.format(loss, acc))
+            return acc
         elif config.args.task_name == 'gan':
-            raise NotImplementedError
+            model_task.load_model()
+            inps = model_task.get_inception_score(5000)
+            logger.info('inception_score_test: {}'.format(inps))
+            return inps
         elif config.args.task_name == 'gan_grid':
             raise NotImplementedError
         elif config.args.task_name == 'gan_cifar10':
@@ -233,7 +245,15 @@ class Trainer():
         config = self.config
         task_name = config.args.task_name
         if task_name == 'reg':
+            from models import reg
             model_ctrl = reg.controller_designed()
+        elif task_name == 'cls':
+            from models import cls
+            model_ctrl = cls.controller_designed()
+        elif task_name == 'gan':
+            from models import gan
+            model_ctrl = gan.controller_designed(config=config)
+
         model_task = self.model_task
         model_task.initialize_weights()
         model_task.reset()
@@ -245,9 +265,19 @@ class Trainer():
         if config.args.task_name == 'reg':
             model_task.load_model()
             loss, _, _ = model_task.valid(model_task.test_dataset)
-            logger.info('test_loss: {}, after {} steps of optimization'.\
-                        format(loss, i))
+            logger.info('step: {}, test_loss: {}'.format(loss, i))
             return loss
+        elif config.args.task_name == 'cls':
+            model_task.load_model()
+            loss, acc, _, _ = model_task.valid(model_task.test_dataset)
+            logger.info('step: {}, test_loss: {}, test_acc: {}'.\
+                        format(i, loss, acc))
+            return acc
+        elif config.args.task_name == 'gan':
+            model_task.load_model()
+            inps = model_task.get_inception_score(5000)
+            logger.info('inception_score_test: {}'.format(inps))
+            return inps
 
     def generate(self, load_stud):
         self.model_stud.initialize_weights()

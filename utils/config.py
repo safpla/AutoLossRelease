@@ -321,6 +321,12 @@ def override_config(config, args):
     if args.lambda_task:
         config.lambda_task = args.lambda_task
 
+    if args.disc_iters:
+        config.disc_iters = args.disc_iters
+
+    if args.gen_iters:
+        config.gen_iters = args.gen_iters
+
 
 
 

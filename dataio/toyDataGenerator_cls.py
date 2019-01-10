@@ -11,74 +11,45 @@ import json
 import utils
 import sklearn.datasets as d
 
-config_path = os.path.join(root_path, 'config/classification.cfg')
-config = utils.Parser(config_path)
-dim = config.dim_input_stud
-num_train = config.num_sample_train
-num_valid = config.num_sample_valid
+config_path = os.path.join(root_path, 'config/cls')
+config = utils.load_config(config_path)
+dim = config.dim_input_task
+num_train_ctrl = config.num_sample_train_ctrl
+num_valid_ctrl = config.num_sample_valid_ctrl
+num_train_task = config.num_sample_train_task
+num_valid_task = config.num_sample_valid_task
 num_test = config.num_sample_test
-num_train_stud = config.num_sample_train_stud
-data_train = config.train_data_file
-data_valid = config.valid_data_file
+
+data_train_ctrl = config.train_ctrl_data_file
+data_valid_ctrl = config.valid_ctrl_data_file
+data_train_task = config.train_task_data_file
+data_valid_task = config.valid_task_data_file
 data_test = config.test_data_file
-data_train_stud = config.train_stud_data_file
 np.random.seed(config.random_seed)
 
 
 def linear_func(x, w):
     return np.dot(x, w)
 
-def old_main():
-    n_samples = num_train + num_valid + num_test + num_train_stud
-    cls_set = d.make_classification(n_samples=n_samples,
-                                    n_features=dim,
-                                    n_informative=2,
-                                    n_clusters_per_class=2,
-                                    n_redundant=2)
-    features = cls_set[0]
-    labels = cls_set[1]
-    folder = '/'.join(data_train.split('/')[:-1])
-    if not os.path.exists(folder):
-        os.mkdir(folder)
-
-    with open(data_train, 'wb') as f:
+def save_to_file(all_features, all_labels, filename, num):
+    with open(filename, 'wb') as f:
         data = []
-        features = cls_set[0][:num_train]
-        labels = cls_set[1][:num_train]
-        for feature, lable in zip(features, labels):
-            data.append({'x': feature, 'y': lable})
+        features = all_features[:num]
+        all_features = all_features[num:]
+        labels = all_labels[:num]
+        all_labels = all_labels[num:]
+        for feature, label in zip(features, labels):
+            data.append({'x': feature, 'y': label})
         np.save(f, data)
         f.close()
 
-    with open(data_valid, 'wb') as f:
-        data = []
-        features = cls_set[0][num_train : num_train + num_valid]
-        labels = cls_set[1][num_train : num_train + num_valid]
-        for feature, lable in zip(features, labels):
-            data.append({'x': feature, 'y': lable})
-        np.save(f, data)
-        f.close()
-
-    with open(data_test, 'wb') as f:
-        data = []
-        features = cls_set[0][num_train+num_valid : num_train+num_valid+num_test]
-        labels = cls_set[1][num_train+num_valid : num_train+num_valid+num_test]
-        for feature, lable in zip(features, labels):
-            data.append({'x': feature, 'y': lable})
-        np.save(f, data)
-        f.close()
-
-    with open(data_train_stud, 'wb') as f:
-        data = []
-        features = cls_set[0][num_train+num_valid+num_test :]
-        labels = cls_set[1][num_train+num_valid+num_test :]
-        for feature, lable in zip(features, labels):
-            data.append({'x': feature, 'y': lable})
-        np.save(f, data)
-        f.close()
+    return all_features, all_labels
 
 def main():
-    n_samples = num_train + num_valid + num_test
+    n_samples = num_train_ctrl + num_valid_ctrl +\
+                num_train_task + num_valid_task +\
+                num_test
+
     cls_set = d.make_classification(n_samples=n_samples,
                                     n_features=dim,
                                     n_informative=2,
@@ -86,36 +57,21 @@ def main():
                                     n_redundant=2)
     features = cls_set[0]
     labels = cls_set[1]
-    folder = '/'.join(data_train.split('/')[:-1])
+    folder = '/'.join(data_train_ctrl.split('/')[:-1])
     if not os.path.exists(folder):
         os.mkdir(folder)
 
-    with open(data_train, 'wb') as f:
-        data = []
-        features = cls_set[0][:num_train]
-        labels = cls_set[1][:num_train]
-        for feature, lable in zip(features, labels):
-            data.append({'x': feature, 'y': lable})
-        np.save(f, data)
-        f.close()
-
-    with open(data_valid, 'wb') as f:
-        data = []
-        features = cls_set[0][num_train : num_train + num_valid]
-        labels = cls_set[1][num_train : num_train + num_valid]
-        for feature, lable in zip(features, labels):
-            data.append({'x': feature, 'y': lable})
-        np.save(f, data)
-        f.close()
-
-    with open(data_test, 'wb') as f:
-        data = []
-        features = cls_set[0][num_train+num_valid :]
-        labels = cls_set[1][num_train+num_valid :]
-        for feature, lable in zip(features, labels):
-            data.append({'x': feature, 'y': lable})
-        np.save(f, data)
-        f.close()
+    print(labels.shape)
+    features, labels = save_to_file(features, labels, data_train_ctrl, num_train_ctrl)
+    print(labels.shape)
+    features, labels = save_to_file(features, labels, data_valid_ctrl, num_valid_ctrl)
+    print(labels.shape)
+    features, labels = save_to_file(features, labels, data_train_task, num_train_task)
+    print(labels.shape)
+    features, labels = save_to_file(features, labels, data_valid_task, num_valid_task)
+    print(labels.shape)
+    features, labels = save_to_file(features, labels, data_test, num_test)
+    print(labels.shape)
 
 def load():
     with open(data_train, 'rb') as f:
@@ -124,5 +80,5 @@ def load():
 
 
 if __name__ == '__main__':
-    #main()
-    load()
+    main()
+    #load()

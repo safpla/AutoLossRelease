@@ -24,38 +24,38 @@ class Config():
         self.valid_task_data_file = 'cls/valid_task.npy'
         self.test_data_file = 'cls/test.npy'
         self.num_sample_train_ctrl = 200
-        self.num_sample_valid_ctrl = 1000
+        self.num_sample_valid_ctrl = 200
         self.num_sample_train_task = 200
-        self.num_sample_valid_task = 1000
-        self.num_sample_test = 1000
+        self.num_sample_valid_task = 200
+        self.num_sample_test = 200
         self.mean_noise = 0
         self.var_noise = 4
         # 1 for training data, others for transfer learning
-        random_seed = 1
+        self.random_seed = 1
 
         # Task model
         self.dim_input_task = 32
         self.dim_hidden_task = 32
         self.dim_output_task = 2
-        self.lambda_task = 0.03
+        self.lambda_task = 0.1
 
         # Training task model
         self.batch_size = 200
-        self.lr_task = 0.0005
+        self.lr_task = 0.001
         self.valid_frequency_task = 10
         # options for `stop_strategy_task` are: exceeding_endurance,
         # exceeding_total_steps
         #self.stop_strategy_task = 'exceeding_total_steps'
         self.stop_strategy_task = 'exceeding_endurance'
-        self.max_endurance_task = 100
-        self.max_training_step = 20000
+        self.max_endurance_task = 20
+        self.max_training_step = 5000
 
         # Controller
         self.controller_model_name = '2layer_logits_clipping'
         # "How many recent training steps will be recorded"
         self.num_pre_loss = 2
 
-        self.dim_input_ctrl = 7
+        self.dim_input_ctrl = 6
         self.dim_hidden_ctrl = 16
         self.dim_output_ctrl = 2
         self.reward_baseline_decay = 0.9
@@ -72,7 +72,7 @@ class Config():
         self.total_episodes = 400
         self.update_frequency_ctrl = 1
         self.save_frequency_ctrl = 50
-        self.max_endurance_ctrl = 50
+        self.max_endurance_ctrl = 100
         self.rl_method = 'reinforce'
         self.epsilon_start_ctrl = 0.5
         self.epsilon_end_ctrl = 0.1

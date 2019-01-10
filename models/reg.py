@@ -75,6 +75,7 @@ class Reg(Basic_model):
         # The bigger, the better. In this case, performance is negative loss.
         # Naming it as performance in order to be compatible with other tasks.
         self.best_performance = -1e10
+        self.collapse = False
         self.improve_baseline = None
 
     def _build_placeholder(self):
@@ -330,9 +331,9 @@ class Reg(Basic_model):
         return np.array(state, dtype='f')
 
 class controller_designed():
-    def __init__(self):
+    def __init__(self, config=None):
         self.step = 0
-        pass
+        self.config = config
 
     def sample(self, state):
         self.step += 1
