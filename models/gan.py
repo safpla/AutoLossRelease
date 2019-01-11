@@ -24,6 +24,7 @@ class Gan(Basic_model):
         self.best_performance
         self.test_dataset
     '''
+
     def __init__(self, config, exp_name='new_exp_gan', arch=None):
         self.config = config
         self.graph = tf.Graph()

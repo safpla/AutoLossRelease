@@ -239,7 +239,6 @@ class Cls(Basic_model):
         if step % self.config.valid_frequency_task == 0:
             self.endurance += 1
             loss, acc, _, _ = self.valid()
-            logger.info('step: {}, accuracy: {}'.format(step, acc))
             if acc > self.best_performance:
                 self.best_step = self.step_number[0]
                 self.best_performance = acc
@@ -319,21 +318,28 @@ class Cls(Basic_model):
         state0 = rel_diff
 
         # normalized baseline improvement
-        state1 = 1 + math.log(abs(ib) + 1e-5) / 12
+        state1 = 1 + math.log(abs(ib) + 1e-4) / 10
 
         # normalized mse ce_loss and l1_loss:
         ce_loss = self.previous_ce_loss[-1]
-        state2 = 1 + math.log(ce_loss + 1e-5) / 12
+        state2 = ce_loss
 
         l1_loss = self.previous_l1_loss[-1]
-        state3 = 1 + math.log(l1_loss + 1e-5) / 12
+        state3 = l1_loss
 
         # train_acc, valid_acc and their difference
-        state4 = self.previous_train_acc[-1] - self.previous_valid_acc[-1]
+        if self.previous_valid_acc[-1] == 0:
+            state4 = 0
+        else:
+            state4 = (self.previous_train_acc[-1] - self.previous_valid_acc[-1]) /\
+                self.previous_valid_acc[-1]
 
         # difference between magnitude of ce gradient and magnitude of l1
         # gradient
-        state5 = self.mag_ce_grad - self.mag_l1_grad
+        if self.mag_l1_grad == 0:
+            state5 = 0
+        else:
+            state5 = (self.mag_ce_grad - self.mag_l1_grad) / self.mag_l1_grad
 
         state = [state0, state1, state2, state3, state4, state5]
         return np.array(state, dtype='f')
@@ -346,5 +352,8 @@ class controller_designed():
     def sample(self, state):
         self.step += 1
         action = [0, 0]
-        action[self.step % 2] = 1
+        if self.step % 2 == 0:
+            action[0] = 1
+        else:
+            action[1] = 1
         return np.array(action)

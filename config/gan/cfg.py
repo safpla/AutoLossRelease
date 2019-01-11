@@ -34,7 +34,7 @@ class Config():
 
         # Training task model
         self.batch_size = 128
-        self.lr_task = 0.0002
+        self.lr_task = 0.0005
         self.beta1 = 0.5
         self.beta2 = 0.999
         self.valid_frequency_task = 500

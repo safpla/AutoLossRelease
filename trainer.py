@@ -200,6 +200,8 @@ class Trainer():
             if endurance > config.max_endurance_ctrl:
                 break
 
+        model_ctrl.save_model(ep)
+
     def test(self, load_ctrl, ckpt_num=None):
         config = self.config
         model_ctrl = self.model_ctrl
@@ -265,13 +267,13 @@ class Trainer():
         if config.args.task_name == 'reg':
             model_task.load_model()
             loss, _, _ = model_task.valid(model_task.test_dataset)
-            logger.info('step: {}, test_loss: {}'.format(loss, i))
+            logger.info('test_loss: {}'.format(loss))
             return loss
         elif config.args.task_name == 'cls':
             model_task.load_model()
             loss, acc, _, _ = model_task.valid(model_task.test_dataset)
-            logger.info('step: {}, test_loss: {}, test_acc: {}'.\
-                        format(i, loss, acc))
+            logger.info('test_loss: {}, test_acc: {}'.\
+                        format(loss, acc))
             return acc
         elif config.args.task_name == 'gan':
             model_task.load_model()

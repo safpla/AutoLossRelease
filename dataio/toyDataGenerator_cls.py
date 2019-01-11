@@ -20,11 +20,12 @@ num_train_task = config.num_sample_train_task
 num_valid_task = config.num_sample_valid_task
 num_test = config.num_sample_test
 
-data_train_ctrl = config.train_ctrl_data_file
-data_valid_ctrl = config.valid_ctrl_data_file
-data_train_task = config.train_task_data_file
-data_valid_task = config.valid_task_data_file
-data_test = config.test_data_file
+data_dir = config.data_dir
+data_train_ctrl = os.path.join(data_dir, config.train_ctrl_data_file)
+data_valid_ctrl = os.path.join(data_dir, config.valid_ctrl_data_file)
+data_train_task = os.path.join(data_dir, config.train_task_data_file)
+data_valid_task = os.path.join(data_dir, config.valid_task_data_file)
+data_test = os.path.join(data_dir, config.test_data_file)
 np.random.seed(config.random_seed)
 
 
