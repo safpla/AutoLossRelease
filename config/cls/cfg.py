@@ -37,7 +37,7 @@ class Config():
         self.dim_input_task = 32
         self.dim_hidden_task = 32
         self.dim_output_task = 2
-        self.lambda_task = 0.08
+        self.lambda_task = 0.02
 
         # Training task model
         self.batch_size = 200

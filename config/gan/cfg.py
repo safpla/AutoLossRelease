@@ -34,11 +34,11 @@ class Config():
 
         # Training task model
         self.batch_size = 128
-        self.lr_task = 0.0005
+        self.lr_task = 0.0002
         self.beta1 = 0.5
         self.beta2 = 0.999
         self.valid_frequency_task = 500
-        self.print_frequency_task = 2000
+        self.print_frequency_task = 500
         self.stop_strategy_task = 'exceeding_endurance'
         self.max_endurance_task = 50
         self.max_training_step = 200000

@@ -98,12 +98,14 @@ class Gan(Basic_model):
             self.noise = tf.placeholder(tf.float32, shape=[None, dim_z],
                                         name='noise')
             self.is_training = tf.placeholder(tf.bool, name='is_training')
+            self.lr = tf.placeholder(tf.float32, name='learning_rate')
 
     def _build_graph(self):
         dim_x = self.config.dim_x
         dim_z = self.config.dim_z
         batch_size = self.config.batch_size
-        lr = self.config.lr_ctrl
+        lr = self.config.lr_task
+        #lr = self.lr
         beta1 = self.config.beta1
         beta2 = self.config.beta2
 
@@ -192,7 +194,7 @@ class Gan(Basic_model):
             output = layers.deconv2d(output, output_shape, name='Deconv2')
             if batchnorm:
                 output = layers.batchnorm(output, is_training=self.is_training,
-                                        name='BN2')
+                                          name='BN2')
             output = activation_fn(output)
 
             output_shape = [-1, 28, 28, 1]
@@ -238,38 +240,37 @@ class Gan(Basic_model):
             return tf.reshape(output, [-1])
 
     def train(self, save_model=False):
-        # TODO: haven't go through this part
+        # This function trains a GAN under fixed schedule.
         sess = self.sess
         config = self.config
         batch_size = config.batch_size
         dim_z = config.dim_z
-        valid_frequency = config.valid_frequency_stud
-        print_frequency = config.print_frequency_stud
-        max_endurance = config.max_endurance_stud
+        valid_frequency = config.valid_frequency_task
+        print_frequency = config.print_frequency_task
+        max_endurance = config.max_endurance_task
         endurance = 0
         best_inps = 0
         inps_baseline = 0
         decay = config.metric_decay
         steps_per_iteration = config.disc_iters + config.gen_iters
-        lrs = np.linspace(config.lr_start_stud,
-                          config.lr_end_stud,
-                          config.lr_decay_steps_stud)
+        lr = config.lr_task
         for step in range(config.max_training_step):
-            lr = lrs[min(config.lr_decay_steps_stud-1, step)]
             if step % steps_per_iteration < config.disc_iters:
                 # ----Update D network.----
                 data = self.train_dataset.next_batch(batch_size)
                 x = data['input']
 
                 z = np.random.normal(size=[batch_size, dim_z]).astype(np.float32)
+                #feed_dict = {self.noise: z, self.real_data: x,
+                #             self.is_training: True, self.lr: lr}
                 feed_dict = {self.noise: z, self.real_data: x,
-                             self.is_training: True, self.lr: lr}
+                             self.is_training: True}
                 sess.run(self.disc_train_op, feed_dict=feed_dict)
             else:
                 # ----Update G network.----
                 z = np.random.normal(size=[batch_size, dim_z]).astype(np.float32)
-                feed_dict = {self.noise: z, self.is_training: True,
-                             self.lr: lr}
+                #feed_dict = {self.noise: z, self.is_training: True, self.lr: lr}
+                feed_dict = {self.noise: z, self.is_training: True}
                 sess.run(self.gen_train_op, feed_dict=feed_dict)
 
             if step % valid_frequency == 0:
@@ -328,10 +329,13 @@ class Gan(Basic_model):
         batch_size = config.batch_size
         dim_z = config.dim_z
         alpha = config.state_decay
+        lr = config.lr_task
 
         data = self.train_dataset.next_batch(batch_size)
         x = data['input']
         z = np.random.normal(size=[batch_size, dim_z]).astype(np.float32)
+        #feed_dict = {self.noise: z, self.real_data: x,
+        #             self.is_training: True, self.lr: lr}
         feed_dict = {self.noise: z, self.real_data: x,
                      self.is_training: True}
         a = np.argmax(np.array(action))
@@ -409,7 +413,12 @@ class Gan(Basic_model):
             inception_score = self.get_inception_score(self.config.inps_batches)
             inps = inception_score[0]
             self.inception_score = inps
+            gen_cost = self.extra_info['gen_cost']
+            disc_cost_real = self.extra_info['disc_cost_real']
+            disc_cost_fake = self.extra_info['disc_cost_fake']
             logger.info('Step: {}, inps: {}'.format(step, inps))
+            logger.info('gen_cost: {}'.format(gen_cost))
+            logger.info('disc_cost_real: {}, disc_cost_fake: {}'.format(disc_cost_real, disc_cost_fake))
             #decay = self.config.metric_decay
             #if self.inps_ema > 0:
             #    self.inps_ema = self.inps_ema * decay + inps * (1 - decay)

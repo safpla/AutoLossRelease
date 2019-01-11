@@ -264,6 +264,8 @@ class Trainer():
             action = model_ctrl.sample(state)
             state, _, dead = model_task.response(action)
 
+        #model_task.train(save_model=True)
+
         if config.args.task_name == 'reg':
             model_task.load_model()
             loss, _, _ = model_task.valid(model_task.test_dataset)
@@ -277,7 +279,7 @@ class Trainer():
             return acc
         elif config.args.task_name == 'gan':
             model_task.load_model()
-            inps = model_task.get_inception_score(5000)
+            inps = model_task.get_inception_score(500, splits=5)
             logger.info('inception_score_test: {}'.format(inps))
             return inps
 
