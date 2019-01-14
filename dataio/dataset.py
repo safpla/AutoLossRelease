@@ -115,7 +115,7 @@ class Dataset(object):
         self._index_in_epoch = 0
         self._epochs_completed = 0
         if shuffle:
-            self:shuffle()
+            self.shuffle()
 
 
 if __name__ == '__main__':

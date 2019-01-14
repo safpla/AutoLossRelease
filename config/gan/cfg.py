@@ -28,7 +28,7 @@ class Config():
         self.dim_x = 784
         self.dim_c = 64
         self.disc_iters = 1
-        self.gen_iters = 7
+        self.gen_iters = 3
         self.inps_batches = 50
         self.inps_splits = 5
 
