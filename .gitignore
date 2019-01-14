@@ -8,6 +8,7 @@ htmlcov
 
 # runtime
 **log/
+*.log
 
 # virtualenv
 *env/
