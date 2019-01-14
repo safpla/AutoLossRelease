@@ -1,5 +1,6 @@
 import os, sys
 import numpy as np
+import json
 import random
 import tensorflow as tf
 from matplotlib import pyplot as plt
@@ -36,6 +37,22 @@ class Dataset(object):
             self._num_examples = len(self._dataset_target)
             print('load {} samples.'.format(self._num_examples))
 
+            self._index = np.arange(self._num_examples)
+            self._index_in_epoch = 0
+            self._epochs_completed = 0
+
+    def load_json(self, filename):
+        with open(filename, 'r') as fin:
+            data = json.load(fin)
+            self._dataset_input = []
+            self._dataset_target = []
+            for point in data:
+                self._dataset_input.append(point['input'])
+                self._dataset_target.append(point['target'])
+            self._dataset_input = np.array(self._dataset_input)
+            self._dataset_target = np.array(self._dataset_target)
+            self._num_examples = len(self._dataset_target)
+            print('load {} samples.'.format(self._num_examples))
             self._index = np.arange(self._num_examples)
             self._index_in_epoch = 0
             self._epochs_completed = 0
@@ -81,12 +98,24 @@ class Dataset(object):
         samples['target'] = target
         return samples
 
-    def reset(self):
+    def reset(self, shuffle=False):
         self._index_in_epoch = 0
         self._epochs_completed = 0
+        if shuffle:
+            self.shuffle()
 
     def shuffle(self):
         np.random.shuffle(self._index)
+
+    def resize(self, number, shuffle=False):
+        self._dataset_input = self._dataset_input[:number]
+        self._dataset_target = self._dataset_target[:number]
+        self._num_examples = len(self._dataset_target)
+        self._index = np.arange(self._num_examples)
+        self._index_in_epoch = 0
+        self._epochs_completed = 0
+        if shuffle:
+            self:shuffle()
 
 
 if __name__ == '__main__':

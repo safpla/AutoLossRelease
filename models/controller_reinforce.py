@@ -136,8 +136,10 @@ class Controller(Basic_model):
         action[a] = 1
         return action
 
-    def train_one_step(self, gradBuffer, lr):
-        feed_dict = dict(zip(self.gradient_plhs, gradBuffer))
+    def train_one_step(self, transitions, lr):
+        # Retrieve the gradients only for debugging, nothing special.
+        gradients = self.get_gradients(transitions)
+        feed_dict = dict(zip(self.gradient_plhs, gradients))
         feed_dict[self.lr_plh] = lr
 
         self.sess.run(self.train_op, feed_dict=feed_dict)
@@ -148,9 +150,6 @@ class Controller(Basic_model):
             tvars = sess.run(self.tvars)
             for idx, var in enumerate(tvars):
                 logger.info('idx:{}, var:{}'.format(idx, var))
-
-    def initialize_weights(self):
-        self.sess.run(self.init)
 
     def get_weights(self):
         return self.sess.run(self.tvars)

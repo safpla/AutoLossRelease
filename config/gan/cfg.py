@@ -28,7 +28,7 @@ class Config():
         self.dim_x = 784
         self.dim_c = 64
         self.disc_iters = 1
-        self.gen_iters = 1
+        self.gen_iters = 7
         self.inps_batches = 50
         self.inps_splits = 5
 
@@ -63,7 +63,7 @@ class Config():
 
         # Training controller
         self.lr_ctrl = 0.001
-        self.total_episodes = 100
+        self.total_episodes = 400
         self.update_frequency_ctrl = 1
         self.print_frequency_ctrl = 100
         self.save_frequency_ctrl = 100

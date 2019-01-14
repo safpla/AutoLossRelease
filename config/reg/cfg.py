@@ -76,6 +76,7 @@ class Config():
         self.epsilon_start_ctrl = 0.5
         self.epsilon_end_ctrl = 0.1
         self.epsilon_decay_steps_ctrl = 1
+
     def print_config(self, logger):
         for key, value in vars(self).items():
             logger.info('{}:: {}'.format(key, value))
