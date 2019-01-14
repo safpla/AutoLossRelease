@@ -10,12 +10,18 @@ import sys
 import math
 from time import gmtime, strftime
 import argparse
+from collections import deque
+import socket
 
 from models import controller_reinforce
+from models import controller_ppo
 import utils
 from utils.analyse_utils import loss_analyzer_reg
 from utils.analyse_utils import loss_analyzer_gan
-import socket
+from utils.data_utils import prepare_batch
+from utils.data_utils import prepare_train_batch
+from utils import replaybuffer
+from utils import metrics
 
 
 root_path = os.path.dirname(os.path.realpath(__file__))
@@ -57,6 +63,18 @@ def discount_rewards(transitions, final_reward):
     for i in range(len(transitions)):
         transitions[i]['reward'] += final_reward
 
+def display_training_process(task_names,
+                             history_train_loss,
+                             history_train_acc,
+                             history_valid_loss,
+                             history_valid_acc):
+    for i, task in enumerate(task_names):
+        train_loss = np.mean(history_train_loss[i])
+        train_acc = np.mean(history_train_acc[i])
+        valid_loss = history_valid_loss[i][-1]
+        valid_acc = history_valid_acc[i][-1]
+        logger.info('Task {:3}, loss: {:8.4f}|{:8.4f}, acc: {:8.4f}|{:8.4f}'.\
+                    format(task, train_loss, valid_loss, train_acc, valid_acc))
 
 class Trainer():
     """ A class to wrap training code. """
@@ -71,7 +89,11 @@ class Trainer():
         exp_name = args.exp_name
         logger.info('exp_name: {}'.format(exp_name))
 
-        self.model_ctrl = controller_reinforce.Controller(config, exp_name+'_ctrl')
+        if config.rl_method == 'reinforce':
+            self.model_ctrl = controller_reinforce.Controller(config, exp_name+'_ctrl')
+        elif config.rl_method == 'ppo':
+            self.model_ctrl = controller_ppo.MlpPPO(config, exp_name+'_ctrl')
+
 
         if args.task_name == 'reg':
             from models import reg
@@ -87,7 +109,7 @@ class Trainer():
             self.model_task = gan_cifar10.Gan_cifar10(config,
                                                       exp_name+'_gan_cifar10')
         elif args.task_name == 'mnt':
-            self.model_task = mnt.Mnt(config, exp_name+'_mnt')
+            self.model_task = mnt.Mnt(config, exp_name+'_mnt', logger)
         else:
             raise NotImplementedError
 
@@ -107,12 +129,6 @@ class Trainer():
         model_ctrl.initialize_weights()
         if load_ctrl:
             model_ctrl.load_model(load_ctrl)
-
-        # TODO: package gradient related operations
-        # ----Initialize gradient buffer.----
-        gradBuffer = model_ctrl.get_weights()
-        for ix, grad in enumerate(gradBuffer):
-            gradBuffer[ix] = grad * 0
 
         # ----Start episodes.----
         for ep in range(config.total_episodes):
@@ -163,13 +179,10 @@ class Trainer():
             # We actually use the advantage as the final reward
             _, adv = model_task.get_final_reward()
             discount_rewards(transitions, adv)
-            grads = model_ctrl.get_gradients(transitions)
-            for idx, grad in enumerate(grads):
-                gradBuffer[idx] += grad
 
             if ep % config.update_frequency_ctrl == (config.update_frequency_ctrl - 1):
                 logger.info('UPDATING CONTROLLOR...')
-                model_ctrl.train_one_step(gradBuffer, lr_ctrl)
+                model_ctrl.train_one_step(transitions, lr_ctrl)
 
             # Printing training results and saving model_ctrl
             save_model_flag = False
@@ -201,6 +214,159 @@ class Trainer():
                 break
 
         model_ctrl.save_model(ep)
+
+    def train_ppo(self, load_model=None, save_model=False):
+        config = self.config
+        batch_size = config.batch_size
+        model_ctrl = self.model_ctrl
+        model_task = self.model_task
+        keys = ['state', 'next_state', 'reward', 'action', 'target_value']
+        replayBufferMeta = replaybuffer.ReplayBuffer(
+            config.buffer_size, keys=keys)
+        meta_training_history = deque(maxlen=10)
+        epsilons = np.linspace(config.epsilon_start_ctrl,
+                               config.epsilon_end_ctrl,
+                               config.epsilon_decay_steps_ctrl)
+
+        # ----Initialize controller.----
+        model_ctrl.initialize_weights()
+        if load_model:
+            model_ctrl.load_model(load_model)
+
+        # ----Start meta loop.----
+        for ep_meta in range(config.total_episodes):
+            logger.info('######## meta_episodes {} #########'.format(ep_meta))
+            start_time = time.time()
+
+            replayBufferMeta.clear()
+            history_train_loss = []
+            history_train_acc = []
+            history_valid_loss = []
+            history_valid_acc = []
+            best_acc = []
+            best_loss = []
+            training_count = []
+            history_len = config.history_len
+            for i in range(len(config.task_names)):
+                history_train_loss.append(deque(maxlen=history_len))
+                history_train_acc.append(deque(maxlen=history_len))
+                history_valid_loss.append(deque(maxlen=history_len))
+                history_valid_acc.append(deque(maxlen=history_len))
+                best_acc.append(0)
+                best_loss.append(100)
+                training_count.append(0)
+
+            # ----Initialize task model.----
+            model_task.initialize_weights()
+            for i in range(len(config.task_names)):
+                valid_loss, valid_acc = self.valid(i)
+                history_valid_loss[i].append(valid_loss)
+                history_valid_acc[i].append(valid_acc)
+                history_train_loss[i].append(valid_loss)
+                history_train_acc[i].append(valid_acc)
+
+            update_count = 0
+            endurance = 0
+            transitions = []
+            epsilon = epsilons[min(ep_meta, config.epsilon_decay_steps_meta - 1)]
+
+            meta_state = model_task.get_state(history_train_loss,
+                                              history_train_acc,
+                                              history_valid_loss,
+                                              history_valid_acc
+                                             )
+
+            for step in range(config.max_training_steps):
+                meta_action = model_ctrl.sample([meta_state], epsilon)[0]
+                # From one-hot to index
+                meta_action = np.argmax(np.array(meta_action))
+                training_count[meta_action] += 1
+                #logger.info('meta_action: {}'.format(meta_action))
+                samples = self.train_datasets[meta_action].next_batch(batch_size)
+                inputs = samples['input']
+                targets = samples['target']
+                inputs, inputs_len, targets, targets_len = prepare_train_batch(
+                    inputs, targets, config.max_seq_length)
+
+                step_loss, step_acc = model_task.train(meta_action,
+                                                       inputs, inputs_len,
+                                                       targets, targets_len,
+                                                       return_acc=True)
+                history_train_loss[meta_action].append(step_loss)
+                history_train_acc[meta_action].append(step_acc)
+
+                meta_state_new = model_task.get_state(history_train_loss,
+                                                      history_train_acc,
+                                                      history_valid_loss,
+                                                      history_valid_acc
+                                                      )
+
+                transition = {'state': meta_state,
+                              'action': meta_action,
+                              'reward': None,
+                              'next_state': meta_state_new,
+                              'target_value': None}
+                transitions.append(transition)
+
+                if step > 0 and step % config.valid_frequency == 0:
+                    impr_flag = False
+                    for i in range(len(config.task_names)):
+                        valid_loss, valid_acc = self.valid(i)
+                        history_valid_loss[i].append(valid_loss)
+                        history_valid_acc[i].append(valid_acc)
+                        if best_loss[i] > valid_loss:
+                            best_loss[i] = valid_loss
+                            endurance = 0
+                            impr_flag = True
+                    if not impr_flag:
+                        endurance += 1
+
+                # ----Online update of controller.----
+                if step > 0 and step % config.short_horizon_len:
+                    update_count += 1
+                    meta_reward = model_task.get_step_reward(
+                        history_valid_loss, step)
+                    for t in transitions:
+                        t['reward'] = meta_reward
+                        replayBufferMeta.add(t)
+
+                    for _ in range(10):
+                        lr = config.lr_ctrl
+                        if replayBufferMeta.population == 0:
+                            break
+                        batch = replayBufferMeta.get_batch(min(config.batch_size_meta,
+                                                               replayBufferMeta.population))
+                        next_value = model_ctrl.get_value(batch['next_state'])
+                        gamma = config.gamma_ctrl
+                        batch['target_value'] = batch['reward'] + gamma * next_value
+                        model_ctrl.train_one_step(batch, lr)
+
+                    if update_count % config.sync_frequency_meta == 0:
+                        model_ctrl.sync_net()
+                        update_count = 0
+
+                # ----Print result.----
+                if step % config.display_frequency == 0:
+                    logger.info('----Step: {:0>6d}----'.format(step))
+                    display_training_process(config.task_names,
+                                             history_train_loss,
+                                             history_train_acc,
+                                             history_valid_loss,
+                                             history_valid_acc)
+                    logger.info('action distribution: {}'.format(
+                        np.array(training_count) / sum(training_count)))
+                    training_count = [0 for c in training_count]
+
+                meta_state = meta_state_new
+
+                #if self.check_terminate():
+                #    break
+                if endurance > config.max_endurance_ctrl:
+                    logger.info(best_loss)
+                    break
+            if save_model:
+                model_ctrl.save_model(ep_meta)
+                model.save_model(0)
 
     def test(self, load_ctrl, ckpt_num=None):
         config = self.config
