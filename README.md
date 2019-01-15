@@ -36,7 +36,7 @@ cd ..
 
 ### GANs
 The MNIST database is available at [yann.lecun.com/exdb/mnist/](yan.lecun.com/exdb/mnist).
-You just need to set a path to the argument 'data\_dir' in config file '/config/gan/cfg.py'. The database will be downloaded to that folder at the first run.
+You just need to set a path to the argument 'data\_dir' in config file 'config/gan/cfg.py'. The database will be downloaded to that folder at the first run.
 
 Similarly, (TODO: for Cifar10)
 
