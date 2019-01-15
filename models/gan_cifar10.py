@@ -11,7 +11,7 @@ import os
 from dataio.dataset_cifar10 import Dataset_cifar10
 import utils
 from utils import inception_score
-from utils import save_images
+#from utils import save_images
 from models import layers
 from models.gan import Gan
 logger = utils.get_logger()
@@ -255,16 +255,16 @@ class Gan_cifar10(Gan):
         return inception_score.get_inception_score(list(all_samples),
                                                    splits=splits)
 
-    def generate_images(self, step):
-        feed_dict = {self.noise: self.fixed_noise_128,
-                     self.is_training: False}
-        samples = self.sess.run(self.fake_data, feed_dict=feed_dict)
-        samples = ((samples+1.)*255./2.).astype('int32')
-        task_dir = os.path.join(self.config.save_images_dir, self.exp_name)
-        if not os.path.exists(task_dir):
-            os.mkdir(task_dir)
-        save_path = os.path.join(task_dir, 'images_{}.jpg'.format(step))
-        save_images.save_images(samples.reshape((-1, 32, 32, 3)), save_path)
+    #def generate_images(self, step):
+    #    feed_dict = {self.noise: self.fixed_noise_128,
+    #                 self.is_training: False}
+    #    samples = self.sess.run(self.fake_data, feed_dict=feed_dict)
+    #    samples = ((samples+1.)*255./2.).astype('int32')
+    #    task_dir = os.path.join(self.config.save_images_dir, self.exp_name)
+    #    if not os.path.exists(task_dir):
+    #        os.mkdir(task_dir)
+    #    save_path = os.path.join(task_dir, 'images_{}.jpg'.format(step))
+    #    save_images.save_images(samples.reshape((-1, 32, 32, 3)), save_path)
 
 
 class controller_designed():
