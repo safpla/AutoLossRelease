@@ -330,14 +330,6 @@ class Gan(Basic_model):
         dim_z = config.dim_z
         alpha = config.state_decay
         lr = config.lr_task
-
-        data = self.train_dataset.next_batch(batch_size)
-        x = data['input']
-        z = np.random.normal(size=[batch_size, dim_z]).astype(np.float32)
-        #feed_dict = {self.noise: z, self.real_data: x,
-        #             self.is_training: True, self.lr: lr}
-        feed_dict = {self.noise: z, self.real_data: x,
-                     self.is_training: True}
         a = np.argmax(np.array(action))
 
         # ----To detect collapse.----
@@ -347,10 +339,20 @@ class Gan(Basic_model):
             self.same_action_count = 0
         self.previous_action = a
 
-        fetch = [self.update[a], self.gen_grad, self.disc_grad,
-                self.gen_cost, self.disc_cost_real, self.disc_cost_fake]
-        _, gen_grad, disc_grad, gen_cost, disc_cost_real, disc_cost_fake = \
-            sess.run(fetch, feed_dict=feed_dict)
+        update_times = [config.gen_iters, config.disc_iters]
+        for _ in update_times[a]:
+            data = self.train_dataset.next_batch(batch_size)
+            x = data['input']
+            z = np.random.normal(size=[batch_size, dim_z]).astype(np.float32)
+            #feed_dict = {self.noise: z, self.real_data: x,
+            #             self.is_training: True, self.lr: lr}
+            feed_dict = {self.noise: z, self.real_data: x,
+                        self.is_training: True}
+
+            fetch = [self.update[a], self.gen_grad, self.disc_grad,
+                    self.gen_cost, self.disc_cost_real, self.disc_cost_fake]
+            _, gen_grad, disc_grad, gen_cost, disc_cost_real, disc_cost_fake = \
+                sess.run(fetch, feed_dict=feed_dict)
 
         self.mag_gen_grad = self.get_grads_magnitude(gen_grad)
         self.mag_disc_grad = self.get_grads_magnitude(disc_grad)
