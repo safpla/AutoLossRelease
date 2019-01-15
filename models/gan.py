@@ -340,7 +340,7 @@ class Gan(Basic_model):
         self.previous_action = a
 
         update_times = [config.gen_iters, config.disc_iters]
-        for _ in update_times[a]:
+        for _ in range(update_times[a]):
             data = self.train_dataset.next_batch(batch_size)
             x = data['input']
             z = np.random.normal(size=[batch_size, dim_z]).astype(np.float32)

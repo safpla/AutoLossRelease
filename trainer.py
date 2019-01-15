@@ -393,10 +393,10 @@ class Trainer():
             inps = model_task.get_inception_score(5000)
             logger.info('inception_score_test: {}'.format(inps))
             return inps
-        elif config.args.task_name == 'gan_grid':
-            raise NotImplementedError
         elif config.args.task_name == 'gan_cifar10':
-            raise NotImplementedError
+            model_task.load_model()
+            inps = model_task.get_inception_score(5000)
+            logger.info('incpetion_score_test: {}'.format(inps))
         else:
             raise NotImplementedError
 
@@ -412,6 +412,9 @@ class Trainer():
         elif task_name == 'gan':
             from models import gan
             model_ctrl = gan.controller_designed(config=config)
+        elif task_name == 'gan_cifar10':
+            from models import gan_cifar10
+            model_ctrl = gan_cifar10.controller_designed(config=config)
         elif task_name == 'mnt':
             from models import mnt
             model_ctrl = mnt.controller_designed(config=config)

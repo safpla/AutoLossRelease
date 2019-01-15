@@ -51,7 +51,7 @@ class Gan_cifar10(Gan):
         self.fixed_noise_128 = np.random.normal(size=(128, config.dim_z))\
             .astype('float32')
 
-    def _load_datasets(selfl):
+    def _load_datasets(self):
         config = self.config
         self.train_dataset = Dataset_cifar10()
         self.train_dataset.load_cifar10(config.data_dir,
@@ -227,7 +227,7 @@ class Gan_cifar10(Gan):
 
     def get_state(self):
         if self.step_number == 0:
-            state = [0] * self.config.dim_state_ctrl
+            state = [0] * self.config.dim_output_ctrl
         else:
             state = [
                      math.log(self.mag_disc_grad / self.mag_gen_grad),

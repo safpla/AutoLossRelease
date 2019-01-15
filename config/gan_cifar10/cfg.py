@@ -13,11 +13,11 @@ class Config():
         self.exp_dir = root_path
         if self.hostname == 'Luna-Desktop':
             self.model_dir = '/media/haowen/autoLoss/saved_models'
-            self.data_dir = '/media/haowen/mnist'
+            self.data_dir = '/media/haowen/cifar10/cifar-10-batches-py'
             self.save_images_dir = '/media/haowen/autoLoss/saved_images'
         else:
             self.model_dir = '/datasets/BigLearning/haowen/autoLoss/saved_models'
-            self.data_dir = '/datasets/BigLearning/haowen/mnist'
+            self.data_dir = '/datasets/BigLearning/haowen/cifar10/cifar-10-batches-py'
             self.save_images_dir = '/datasets/BigLearning/haowen/autoLoss/saved_images'
         self.pretrained_mnist_checkpoint_dir = os.path.join(self.model_dir, 'mnist_classification')
 
@@ -25,27 +25,26 @@ class Config():
 
         # Task model
         self.dim_z = 128
-        self.dim_x = 784
+        self.dim_x = 3072
         self.dim_c = 64
         self.disc_iters = 1
-        self.gen_iters = 3
+        self.gen_iters = 2
         self.inps_batches = 50
-        self.inps_splits = 5
+        self.inps_splits = 1
 
         # Training task model
-        self.batch_size = 128
+        self.batch_size = 256
         self.lr_task = 0.0002
         self.beta1 = 0.5
         self.beta2 = 0.999
-        self.valid_frequency_task = 500
-        self.print_frequency_task = 500
+        self.valid_frequency_task = 4000
+        self.print_frequency_task = 4000
         self.stop_strategy_task = 'exceeding_endurance'
-        self.max_endurance_task = 20
-        self.max_training_step = 200000
+        self.max_endurance_task = 50
+        self.max_training_step = 400000
 
         # Controller
-        #self.controller_model_name = '2layer_logits_clipping'
-        self.controller_model_name = 'linear_logits_clipping'
+        self.controller_model_name = '2layer_logits_clipping'
         # "How many recent training steps will be recorded"
         self.num_pre_loss = 2
 
