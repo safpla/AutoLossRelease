@@ -18,8 +18,6 @@ from models import controller_ppo
 import utils
 from utils.analyse_utils import loss_analyzer_reg
 from utils.analyse_utils import loss_analyzer_gan
-from utils.data_utils import prepare_batch
-from utils.data_utils import prepare_train_batch
 from utils import replaybuffer
 from utils import metrics
 
@@ -109,7 +107,8 @@ class Trainer():
             self.model_task = gan_cifar10.Gan_cifar10(config,
                                                       exp_name+'_gan_cifar10')
         elif args.task_name == 'mnt':
-            self.model_task = mnt.Mnt(config, exp_name+'_mnt', logger)
+            from models import mnt
+            self.model_task = mnt.Mnt(config, exp_name+'_mnt')
         else:
             raise NotImplementedError
 
@@ -215,7 +214,7 @@ class Trainer():
 
         model_ctrl.save_model(ep)
 
-    def train_ppo(self, load_model=None, save_model=False):
+    def train_ppo(self, load_ctrl=None, save_ctrl=False):
         config = self.config
         batch_size = config.batch_size
         model_ctrl = self.model_ctrl
@@ -230,13 +229,12 @@ class Trainer():
 
         # ----Initialize controller.----
         model_ctrl.initialize_weights()
-        if load_model:
-            model_ctrl.load_model(load_model)
+        if load_ctrl:
+            model_ctrl.load_ctrl(load_ctrl)
 
         # ----Start meta loop.----
         for ep_meta in range(config.total_episodes):
             logger.info('######## meta_episodes {} #########'.format(ep_meta))
-            start_time = time.time()
 
             replayBufferMeta.clear()
             history_train_loss = []
@@ -246,12 +244,12 @@ class Trainer():
             best_acc = []
             best_loss = []
             training_count = []
-            history_len = config.history_len
+            history_len_task = config.history_len_task
             for i in range(len(config.task_names)):
-                history_train_loss.append(deque(maxlen=history_len))
-                history_train_acc.append(deque(maxlen=history_len))
-                history_valid_loss.append(deque(maxlen=history_len))
-                history_valid_acc.append(deque(maxlen=history_len))
+                history_train_loss.append(deque(maxlen=history_len_task))
+                history_train_acc.append(deque(maxlen=history_len_task))
+                history_valid_loss.append(deque(maxlen=history_len_task))
+                history_valid_acc.append(deque(maxlen=history_len_task))
                 best_acc.append(0)
                 best_loss.append(100)
                 training_count.append(0)
@@ -259,7 +257,7 @@ class Trainer():
             # ----Initialize task model.----
             model_task.initialize_weights()
             for i in range(len(config.task_names)):
-                valid_loss, valid_acc = self.valid(i)
+                valid_loss, valid_acc = model_task.valid(i)
                 history_valid_loss[i].append(valid_loss)
                 history_valid_acc[i].append(valid_acc)
                 history_train_loss[i].append(valid_loss)
@@ -268,7 +266,7 @@ class Trainer():
             update_count = 0
             endurance = 0
             transitions = []
-            epsilon = epsilons[min(ep_meta, config.epsilon_decay_steps_meta - 1)]
+            epsilon = epsilons[min(ep_meta, config.epsilon_decay_steps_ctrl - 1)]
 
             meta_state = model_task.get_state(history_train_loss,
                                               history_train_acc,
@@ -276,22 +274,15 @@ class Trainer():
                                               history_valid_acc
                                              )
 
-            for step in range(config.max_training_steps):
+            for step in range(config.max_training_step):
                 meta_action = model_ctrl.sample([meta_state], epsilon)[0]
                 # From one-hot to index
                 meta_action = np.argmax(np.array(meta_action))
                 training_count[meta_action] += 1
-                #logger.info('meta_action: {}'.format(meta_action))
-                samples = self.train_datasets[meta_action].next_batch(batch_size)
-                inputs = samples['input']
-                targets = samples['target']
-                inputs, inputs_len, targets, targets_len = prepare_train_batch(
-                    inputs, targets, config.max_seq_length)
 
-                step_loss, step_acc = model_task.train(meta_action,
-                                                       inputs, inputs_len,
-                                                       targets, targets_len,
-                                                       return_acc=True)
+                state, _, _ = model_task.response(meta_action)
+                step_loss = state[1]
+                step_acc = state[2]
                 history_train_loss[meta_action].append(step_loss)
                 history_train_acc[meta_action].append(step_acc)
 
@@ -308,10 +299,10 @@ class Trainer():
                               'target_value': None}
                 transitions.append(transition)
 
-                if step > 0 and step % config.valid_frequency == 0:
+                if step > 0 and step % config.valid_frequency_task == 0:
                     impr_flag = False
                     for i in range(len(config.task_names)):
-                        valid_loss, valid_acc = self.valid(i)
+                        valid_loss, valid_acc = model_task.valid(i)
                         history_valid_loss[i].append(valid_loss)
                         history_valid_acc[i].append(valid_acc)
                         if best_loss[i] > valid_loss:
@@ -334,19 +325,19 @@ class Trainer():
                         lr = config.lr_ctrl
                         if replayBufferMeta.population == 0:
                             break
-                        batch = replayBufferMeta.get_batch(min(config.batch_size_meta,
+                        batch = replayBufferMeta.get_batch(min(config.batch_size_ctrl,
                                                                replayBufferMeta.population))
                         next_value = model_ctrl.get_value(batch['next_state'])
                         gamma = config.gamma_ctrl
                         batch['target_value'] = batch['reward'] + gamma * next_value
                         model_ctrl.train_one_step(batch, lr)
 
-                    if update_count % config.sync_frequency_meta == 0:
+                    if update_count % config.sync_frequency_ctrl == 0:
                         model_ctrl.sync_net()
                         update_count = 0
 
                 # ----Print result.----
-                if step % config.display_frequency == 0:
+                if step % config.display_frequency_task == 0:
                     logger.info('----Step: {:0>6d}----'.format(step))
                     display_training_process(config.task_names,
                                              history_train_loss,
@@ -361,12 +352,12 @@ class Trainer():
 
                 #if self.check_terminate():
                 #    break
-                if endurance > config.max_endurance_ctrl:
+                if endurance > config.max_endurance_task:
                     logger.info(best_loss)
                     break
-            if save_model:
-                model_ctrl.save_model(ep_meta)
-                model.save_model(0)
+            if save_ctrl:
+                model_ctrl.save_ctrl(ep_meta)
+                model.save_ctrl(0)
 
     def test(self, load_ctrl, ckpt_num=None):
         config = self.config
@@ -421,16 +412,22 @@ class Trainer():
         elif task_name == 'gan':
             from models import gan
             model_ctrl = gan.controller_designed(config=config)
+        elif task_name == 'mnt':
+            from models import mnt
+            model_ctrl = mnt.controller_designed(config=config)
 
-        model_task = self.model_task
-        model_task.initialize_weights()
-        model_task.reset()
-        state = model_task.get_state()
-        for i in range(config.max_training_step):
-            action = model_ctrl.sample(state)
-            state, _, dead = model_task.response(action)
-
-        #model_task.train(save_model=True)
+        if task_name == 'mnt':
+            self.config.total_episodes = 1
+            self.model_ctrl = model_ctrl
+            self.train_ppo()
+        else:
+            model_task = self.model_task
+            model_task.initialize_weights()
+            model_task.reset()
+            state = model_task.get_state()
+            for i in range(config.max_training_step):
+                action = model_ctrl.sample(state)
+                state, _, dead = model_task.response(action)
 
         if config.args.task_name == 'reg':
             model_task.load_model()
@@ -448,6 +445,8 @@ class Trainer():
             inps = model_task.get_inception_score(500, splits=5)
             logger.info('inception_score_test: {}'.format(inps))
             return inps
+        elif config.args.task_name == 'mnt':
+            return 0
 
     def generate(self, load_stud):
         self.model_stud.initialize_weights()
@@ -475,7 +474,10 @@ if __name__ == '__main__':
     if args.task_mode == 'train':
         # ----Training----
         logger.info('TRAIN')
-        trainer.train(load_ctrl=args.load_ctrl, save_ctrl=args.save_ctrl)
+        if config.rl_method == 'reinforce':
+            trainer.train(load_ctrl=args.load_ctrl, save_ctrl=args.save_ctrl)
+        elif config.rl_method == 'ppo':
+            trainer.train_ppo(load_ctrl=args.load_ctrl, save_ctrl=args.save_ctrl)
     elif args.task_mode == 'test':
         ## ----Testing----
         logger.info('TEST')

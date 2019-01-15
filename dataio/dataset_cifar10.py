@@ -25,7 +25,6 @@ def _extract(tar_path, target_path):
         for file_name in file_names:
             tar.extract(file_name, target_path)
 
-
 class Dataset_cifar10(Dataset):
     def __init__(self):
         pass

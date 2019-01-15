@@ -101,13 +101,14 @@ class BasePPO(Basic_model):
             return action, 'random'
         else:
             pi = self.sess.run(self.pi, {self.state: states})[0]
-            a = np.random.choice(dim_a, 1, p=pi)[0]
+            a = np.argmax(pi)
+            #a = np.random.choice(dim_a, 1, p=pi)[0]
             action[a] = 1
             return action, pi
 
     def sync_net(self):
         self.sess.run(self.sync_op)
-        logger.info('{}: target_network synchronized'.format(self.exp_name))
+        #logger.info('{}: target_network synchronized'.format(self.exp_name))
 
     def update_critic(self, transition_batch, lr=0.001):
         state = transition_batch['state']

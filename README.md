@@ -20,6 +20,36 @@ pip install -r requirements.txt
 ```
 
 ## Datasets
+### Regression
+```
+cd ./dataio
+python dataGeneration_reg.py
+cd ..
+```
+
+### Classification
+```
+cd ./dataio
+python dataGeneration_cls.py
+cd ..
+```
+
+### GANs
+The MNIST database is available at [yann.lecun.com/exdb/mnist/](yan.lecun.com/exdb/mnist).
+You just need to set a path to the argument 'data\_dir' in config file '/config/gan/cfg.py'. The database will be downloaded to that folder at the first run.
+
+Similarly, (TODO: for Cifar10)
+
+### Multi-task Neural Translation
+The preprocessing of corpus of three language tasks is cumbersome, you can directly use the preprocessed data we provided in this repository.
+Or you can run:
+```
+cd ./dataio
+python dataGeneration_mnt.py
+cd ..
+```
+In this case, you need to download 'tiger\_release\_aug07.corrected.16012013.xml' from [download page of the TIGER corpus](http://www.ims.uni-stuttgart.de/forschung/ressourcen/korpora/tiger.en.html) and save it at 'Data/mnt/pos'
+
 
 ## Pretrained models
 

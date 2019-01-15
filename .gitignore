@@ -48,3 +48,4 @@ tests/.*
 
 ## local
 ./Data
+*tiger*

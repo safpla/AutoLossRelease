@@ -20,11 +20,11 @@ class Config():
             self.model_dir = '/datasets/BigLearning/haowen/autoLoss/saved_models'
 
         # Data
-        self.train_ctrl_data_file = 'reg_16_200/train_ctrl.npy'
-        self.valid_ctrl_data_file = 'reg_16_200/valid_ctrl.npy'
-        self.train_task_data_file = 'reg_16_200/train_task.npy'
-        self.valid_task_data_file = 'reg_16_200/valid_task.npy'
-        self.test_data_file = 'reg_16_200/test.npy'
+        self.train_ctrl_data_file = 'reg/train_ctrl.npy'
+        self.valid_ctrl_data_file = 'reg/valid_ctrl.npy'
+        self.train_task_data_file = 'reg/train_task.npy'
+        self.valid_task_data_file = 'reg/valid_task.npy'
+        self.test_data_file = 'reg/test.npy'
         self.num_sample_train_ctrl = 200
         self.num_sample_valid_ctrl = 200
         self.num_sample_train_task = 200

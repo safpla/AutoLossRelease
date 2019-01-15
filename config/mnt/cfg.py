@@ -60,8 +60,8 @@ class Config():
         self.short_horizon_len = 50
         self.save_frequency_task = 500
         self.history_len_task = 5
-        self.max_endurance_task = 10
-        self.max_training_steps = 100000
+        self.max_endurance_task = 50
+        self.max_training_step = 100000
 
         self.max_decode_step = 70
         self.beam_width = 5
@@ -91,11 +91,10 @@ class Config():
         self.total_episodes = 400
         self.rl_method = 'ppo'
 
-        self.epsilon_start_ctrl = 0.1
+        self.epsilon_start_ctrl = 0.5
         self.epsilon_end_ctrl = 0.1
-        self.epsilon_decay_steps_ctrl = 50
+        self.epsilon_decay_steps_ctrl = 5
         self.history_len_task = 10
-        self.max_endurance_ctrl = 10
 
     def print_config(self, logger):
         for key, value in vars(self).items():
