@@ -55,9 +55,24 @@ In this case, you need to download 'tiger\_release\_aug07.corrected.16012013.xml
 ## Pretrained models
 
 ## Experiments
-To train a controller for regression task, run:
-`python trainer.py --task_name=reg --task_mode=train --exp_name=train_reg_controller`
+`python trainer.py --task_name=[task_name] --task_mode=[task_mode] --exp_name=[exp_name]`
+[task\_name] includes: reg, cls, gan, gan\_cifar10, mnt;
+[task\_mode] includes: train, test, baseline;
+[exp\_name] can be any string you like.
 
+Example:
+Train a controller on regression task:
+`python trainer.py --task_name=reg --task_mode=train --exp_name=reg_train`
+
+After the training of the controller, you want to use the controller to guide the training of the regression model on a new dataset:
+`python trainer.py --task_name=reg --task_mode=test --exp_name=reg_train`
+The program will automaticly load the controller trained in experiment with 'exp\_name' reg_train. So make sure the exp\_name is the same with that in training session. 
+Alternatively, you can specify the checkpoint folder where the controller model is saved by using the parameter 'load\_ctrl':
+`python trainer.py --task_name=reg --task_mode=test --exp_name=reg_test --load_ctrl=path/to/checkpoint/folder/`
+
+Then you may want to compare the result with a baseline training schedule:
+`python trainer.py --task_name=reg --task_mode=baseline --exp_name=reg_baseline`
+You can design your own training schedule through the class 'controller_designed' in 'models/reg.py'
 
 ## Citation
 If you use any part of this code in your research, please cite our paper:
