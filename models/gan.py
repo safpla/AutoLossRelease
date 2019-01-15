@@ -515,12 +515,13 @@ class controller_designed():
     def sample(self, state):
         self.step += 1
         action = [0, 0]
-        disc = self.config.disc_iters
-        gen = self.config.gen_iters
-        if self.step % (disc + gen) < gen:
-            action[0] =1
-        else:
-            action[1] = 1
+        action[self.step % 2] = 1
+        #disc = self.config.disc_iters
+        #gen = self.config.gen_iters
+        #if self.step % (disc + gen) < gen:
+        #    action[0] =1
+        #else:
+        #    action[1] = 1
         return np.array(action)
 
     def initialize_weights(self):

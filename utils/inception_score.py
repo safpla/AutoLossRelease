@@ -100,9 +100,6 @@ def _init_inception():
                     #o._shape = tf.TensorShape(new_shape)
                     o.__dict__['_shape_val'] = tf.TensorShape(new_shape)
             w = sess.graph.get_operation_by_name("softmax/logits/MatMul").inputs[1]
-            print(pool3)
-            print(w)
-            print(tf.squeeze(pool3))
             shape = tf.shape(pool3)
             pool3_new = tf.reshape(pool3, [shape[0], shape[-1]])
 

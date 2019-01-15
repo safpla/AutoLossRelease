@@ -27,8 +27,8 @@ class Config():
         self.dim_z = 128
         self.dim_x = 3072
         self.dim_c = 64
-        self.disc_iters = 1
-        self.gen_iters = 2
+        self.disc_iters = 2
+        self.gen_iters = 1
         self.inps_batches = 50
         self.inps_splits = 1
 
@@ -37,8 +37,8 @@ class Config():
         self.lr_task = 0.0002
         self.beta1 = 0.5
         self.beta2 = 0.999
-        self.valid_frequency_task = 4000
-        self.print_frequency_task = 4000
+        self.valid_frequency_task = 500
+        self.print_frequency_task = 500
         self.stop_strategy_task = 'exceeding_endurance'
         self.max_endurance_task = 50
         self.max_training_step = 400000

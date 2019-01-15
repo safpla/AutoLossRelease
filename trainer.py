@@ -397,6 +397,10 @@ class Trainer():
             model_task.load_model()
             inps = model_task.get_inception_score(5000)
             logger.info('incpetion_score_test: {}'.format(inps))
+        elif config.args.task_name == 'mnt':
+            model_task.load_model()
+            # TODO: not implemented
+            pass
         else:
             raise NotImplementedError
 

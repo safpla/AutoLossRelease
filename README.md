@@ -38,7 +38,8 @@ cd ..
 The MNIST database is available at [yann.lecun.com/exdb/mnist/](yan.lecun.com/exdb/mnist).
 You just need to set a path to the argument 'data\_dir' in config file 'config/gan/cfg.py'. The database will be downloaded to that folder at the first run.
 
-Similarly, (TODO: for Cifar10)
+The Cifar10 database is available at [Download page of CIFAR10](http://www.cs.toronto.edu/~kriz/cifar.html)
+You need to download the python version from this page and unzip it. Set the argument 'data\_dir' in config file 'config/gan_cifar.py' to where you save the data.
 
 ### Multi-task Neural Translation
 The preprocessing of corpus of three language tasks is cumbersome, you can directly use the preprocessed data we provided in this repository.

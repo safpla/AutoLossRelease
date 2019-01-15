@@ -64,9 +64,9 @@ class Mnt(Basic_model):
             test_datasets.load_json(config.test_data_files[task_num])
 
             # Only use a quarter of the dataset to fasten the training.
-            train_datasets.resize(int(train_datasets._num_examples * 0.75), shuffle=True)
-            valid_datasets.resize(int(valid_datasets._num_examples * 0.75), shuffle=True)
-            test_datasets.resize(int(test_datasets._num_examples * 0.75), shuffle=True)
+            train_datasets.resize(int(train_datasets._num_examples * 0.7), shuffle=True)
+            valid_datasets.resize(int(valid_datasets._num_examples * 0.7), shuffle=True)
+            test_datasets.resize(int(test_datasets._num_examples * 0.7), shuffle=True)
 
             self.train_datasets.append(train_datasets)
             self.valid_datasets.append(valid_datasets)
