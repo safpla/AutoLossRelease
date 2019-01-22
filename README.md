@@ -9,18 +9,21 @@ python>=3.6, tensorflow-gpu==1.8.0, matplotlib==2.2.2
 
 ## Getting Started
 
-### Install and Activate a Virtual Environment
+Install and Activate a Virtual Environment
 ```
 virtualenv --python=python3.6 ./env
 source ./env/bin/activate
 ```
-### Install Dependencies
+Install Dependencies
 ```
 pip install -r requirements.txt
 ```
 
 ## Datasets
-### Regression
+#### Regression
+
+To synthesize a dataset for the regression experiment, run the following script:
+
 ```
 cd ./dataio
 python dataGeneration_reg.py
