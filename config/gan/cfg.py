@@ -28,7 +28,7 @@ class Config():
         self.dim_x = 784
         self.dim_c = 64
         self.disc_iters = 1
-        self.gen_iters = 3
+        self.gen_iters = 4
         self.inps_batches = 50
         self.inps_splits = 5
 
@@ -44,8 +44,8 @@ class Config():
         self.max_training_step = 200000
 
         # Controller
-        #self.controller_model_name = '2layer_logits_clipping'
-        self.controller_model_name = 'linear_logits_clipping'
+        self.controller_model_name = '2layer_logits_clipping'
+        #self.controller_model_name = 'linear_logits_clipping'
         # "How many recent training steps will be recorded"
         self.num_pre_loss = 2
 
@@ -63,12 +63,12 @@ class Config():
         self.logit_clipping_c = 1
 
         # Training controller
-        self.lr_ctrl = 0.001
+        self.lr_ctrl = 0.02
         self.total_episodes = 400
         self.update_frequency_ctrl = 1
         self.print_frequency_ctrl = 100
         self.save_frequency_ctrl = 100
-        self.max_endurance_ctrl = 100
+        self.max_endurance_ctrl = 50
         self.rl_method = 'reinforce'
         self.state_decay = 0.9
         self.metric_decay = 0.8

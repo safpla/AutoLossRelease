@@ -154,6 +154,7 @@ class Trainer():
                               'action': action,
                               'reward': reward,
                               'extra_info': extra_info}
+                #print(transition)
                 transitions.append(transition)
 
                 state = state_new
@@ -182,6 +183,9 @@ class Trainer():
             if ep % config.update_frequency_ctrl == (config.update_frequency_ctrl - 1):
                 logger.info('UPDATING CONTROLLOR...')
                 model_ctrl.train_one_step(transitions, lr_ctrl)
+                logger.info('adv: {}'.format(adv))
+                model_ctrl.print_weights()
+
 
             # Printing training results and saving model_ctrl
             save_model_flag = False
@@ -375,6 +379,8 @@ class Trainer():
             actions += np.array(action)
             state_new, _, dead = model_task.response(action)
             state = state_new
+            if dead:
+                break
 
         print(actions)
 
@@ -481,6 +487,7 @@ if __name__ == '__main__':
     if args.task_mode == 'train':
         # ----Training----
         logger.info('TRAIN')
+        #args.load_ctrl = '/media/haowen/autoLoss/saved_models/rebuttal_gan_2l_adam_short_ctrl/'
         if config.rl_method == 'reinforce':
             trainer.train(load_ctrl=args.load_ctrl, save_ctrl=args.save_ctrl)
         elif config.rl_method == 'ppo':

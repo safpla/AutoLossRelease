@@ -69,15 +69,15 @@ class Controller(Basic_model):
                                                    activation_fn=None)
                 self.output = tf.nn.softmax(self.logits)
             elif model_name == 'linear_logits_clipping':
-                self.logits = slim.fully_connected(self.state_plh, a_size,
-                                                   weights_initializer=initializer,
-                                                   activation_fn=None)
+                #self.logits = slim.fully_connected(self.state_plh, a_size,
+                #                                   weights_initializer=initializer,
+                #                                   activation_fn=None)
                 # ----Old version----
-                #w = tf.get_variable('w', shape=[x_size, a_size], dtype=tf.float32,
-                #                    initializer=initializer)
-                #b = tf.get_variable('b', shape=[a_size], dtype=tf.float32,
-                #                    initializer=tf.zeros_initializer())
-                #self.logits = tf.matmul(self.state_plh, w) + b
+                w = tf.get_variable('w', shape=[x_size, a_size], dtype=tf.float32,
+                                    initializer=initializer)
+                b = tf.get_variable('b', shape=[a_size], dtype=tf.float32,
+                                    initializer=tf.zeros_initializer())
+                self.logits = tf.matmul(self.state_plh, w) + b
                 self.output = tf.nn.softmax(self.logits /
                                             config.logit_clipping_c)
             else:
@@ -108,7 +108,7 @@ class Controller(Basic_model):
             self.init = tf.global_variables_initializer()
             self.saver = tf.train.Saver()
 
-    def sample(self, state, explore_rate=0.5):
+    def sample(self, state, explore_rate=0.1):
         #
         # Sample an action from a given state, probabilistically
 
@@ -139,6 +139,7 @@ class Controller(Basic_model):
     def train_one_step(self, transitions, lr):
         # Retrieve the gradients only for debugging, nothing special.
         gradients = self.get_gradients(transitions)
+        print(gradients)
         feed_dict = dict(zip(self.gradient_plhs, gradients))
         feed_dict[self.lr_plh] = lr
 
@@ -176,4 +177,3 @@ class Controller(Basic_model):
                     }
         grads = sess.run(self.grads, feed_dict=feed_dict)
         return grads
-

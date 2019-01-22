@@ -86,4 +86,3 @@ class Basic_model():
 
     def initialize_weights(self):
         self.sess.run(self.init)
-
