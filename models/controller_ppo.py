@@ -92,7 +92,7 @@ class BasePPO(Basic_model):
     def build_actor_net(self, scope, trainable):
         raise NotImplementedError
 
-    def sample(self, states, epsilon=0):
+    def sample(self, states, epsilon=0.5):
         dim_a = self.config.dim_output_ctrl
         action = np.zeros(dim_a, dtype='i')
         if random.random() < epsilon:

@@ -4,7 +4,7 @@ Code for reproducing experiments in [AutoLoss: Learning Discrete Schedules for A
 
 ## Requirements
 ```
-python>=3.6, tensorflow-gpu==1.8.0, matplotlib==2.2.2
+python>=3.6, tensorflow-gpu==1.8.0, matplotlib==2.2.2, imageio==2.4.1
 ```
 
 ## Getting Started
