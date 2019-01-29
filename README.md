@@ -55,7 +55,6 @@ cd ..
 In this case, you need to download 'tiger\_release\_aug07.corrected.16012013.xml' from [download page of the TIGER corpus](http://www.ims.uni-stuttgart.de/forschung/ressourcen/korpora/tiger.en.html) and save it at 'Data/mnt/pos'
 
 
-## Pretrained models
 
 ## Experiments
 `python trainer.py --task_name=[task_name] --task_mode=[task_mode] --exp_name=[exp_name]`
@@ -76,6 +75,12 @@ Alternatively, you can specify the checkpoint folder where the controller model 
 Then you may want to compare the result with a baseline training schedule:
 `python trainer.py --task_name=reg --task_mode=baseline --exp_name=reg_baseline`
 You can design your own training schedule through the class 'controller_designed' in 'models/reg.py'
+
+## Pretrained models
+It may take days to train a controller on GANs task. We provide a pretrained controller for MNIST GAN. To test this controller:
+```
+python trainer.py --task_name=gan --task_mode=test --exp_name=gan_2l_adam_short
+```
 
 ## Citation
 If you use any part of this code in your research, please cite our paper:
