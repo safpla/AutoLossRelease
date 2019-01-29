@@ -216,7 +216,6 @@ class Trainer():
             if endurance > config.max_endurance_ctrl:
                 break
 
-        model_ctrl.save_model(ep)
 
     def train_ppo(self, load_ctrl=None, save_ctrl=False):
         config = self.config
@@ -361,7 +360,6 @@ class Trainer():
                     break
             if save_ctrl:
                 model_ctrl.save_ctrl(ep_meta)
-                model.save_ctrl(0)
 
     def test(self, load_ctrl, ckpt_num=None):
         config = self.config
@@ -379,8 +377,8 @@ class Trainer():
             actions += np.array(action)
             state_new, _, dead = model_task.response(action)
             state = state_new
-            if dead:
-                break
+            #if dead:
+            #    break
 
         print(actions)
 

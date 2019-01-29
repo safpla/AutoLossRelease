@@ -40,7 +40,7 @@ class Config():
         self.valid_frequency_task = 500
         self.print_frequency_task = 500
         self.stop_strategy_task = 'exceeding_endurance'
-        self.max_endurance_task = 20
+        self.max_endurance_task = 50
         self.max_training_step = 200000
 
         # Controller

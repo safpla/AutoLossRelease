@@ -101,8 +101,8 @@ class BasePPO(Basic_model):
             return action, 'random'
         else:
             pi = self.sess.run(self.pi, {self.state: states})[0]
-            a = np.argmax(pi)
-            #a = np.random.choice(dim_a, 1, p=pi)[0]
+            #a = np.argmax(pi)
+            a = np.random.choice(dim_a, 1, p=pi)[0]
             action[a] = 1
             return action, pi
 
