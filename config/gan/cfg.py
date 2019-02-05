@@ -12,7 +12,7 @@ class Config():
         # Environment & Path
         self.exp_dir = root_path
         if self.hostname == 'Luna-Desktop':
-            self.model_dir = os.path.join(self.exp_dir, 'weights')
+            self.model_dir = '/media/haowen/autoLoss/saved_models'
             self.data_dir = '/media/haowen/mnist'
             self.save_images_dir = '/media/haowen/autoLoss/saved_images'
         else:

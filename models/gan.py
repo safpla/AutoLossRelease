@@ -77,6 +77,7 @@ class Gan(Basic_model):
         self.mag_gen_grad = None
         self.mag_disc_grad = None
         self.inception_score = 0
+        self.inps_ema = 0
         self.checkpoint_dir = None
 
         # to control when to terminate the episode
@@ -418,17 +419,18 @@ class Gan(Basic_model):
             gen_cost = self.extra_info['gen_cost']
             disc_cost_real = self.extra_info['disc_cost_real']
             disc_cost_fake = self.extra_info['disc_cost_fake']
+            decay = self.config.metric_decay
+            if self.inps_ema > 0:
+                self.inps_ema = self.inps_ema * decay + inps * (1 - decay)
+            else:
+                self.inps_ema = inps
             logger.info('Step: {}, inps: {}'.format(step, inps))
+            logger.info('inps_ema: {}'.format(self.inps_ema))
             logger.info('gen_cost: {}'.format(gen_cost))
             logger.info('disc_cost_real: {}, disc_cost_fake: {}'.format(disc_cost_real, disc_cost_fake))
-            #decay = self.config.metric_decay
-            #if self.inps_ema > 0:
-            #    self.inps_ema = self.inps_ema * decay + inps * (1 - decay)
-            #else:
-            #    self.inps_ema = inps
-            if self.inception_score > self.best_performance:
+            if self.inps_ema > self.best_performance:
                 self.best_step = self.step_number
-                self.best_performance = self.inception_score
+                self.best_performance = self.inps_ema
                 self.endurance = 0
                 self.save_model(step, mute=True)
 
