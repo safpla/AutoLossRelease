@@ -11,7 +11,8 @@ class Config():
         self.hostname = socket.gethostname()
         # Environment & Path
         self.exp_dir = root_path
-        self.data_dir = os.path.join(self.exp_dir, 'Data')
+        self.data_dir = os.path.join(self.exp_dir, 'data')
+        self.task = 'reg'
         if self.hostname == 'jungpu4':
             self.model_dir = '/home/haowen/saved/AutoLossApps/saved_models'
         elif self.hostname == 'Luna-Desktop':

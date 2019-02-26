@@ -33,7 +33,7 @@ def main():
     if not os.path.exists(data_dir):
         os.mkdir(data_dir)
     if not os.path.exists(os.path.join(data_dir, config.task)):
-        os.mkdir(data_dir)
+        os.mkdir(os.path.join(data_dir, config.task))
 
     data_train_ctrl = os.path.join(data_dir, config.train_ctrl_data_file)
     data_valid_ctrl = os.path.join(data_dir, config.valid_ctrl_data_file)
