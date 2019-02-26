@@ -20,21 +20,16 @@ pip install -r requirements.txt
 ```
 
 ## Datasets
-#### Regression
+### Regression and Classification
 
-To synthesize a dataset for the regression experiment, run the following script:
+The regression and classification tasks use synthetic data. To synthesize a dataset for the regression experiment, run the following script:
 
 ```
-cd ./dataio
-python dataGeneration_reg.py
-cd ..
-```
+# regression
+python dataio/gen_reg_data.py
 
-### Classification
-```
-cd ./dataio
-python dataGeneration_cls.py
-cd ..
+# classification
+python dataio/dataGeneration_cls.py
 ```
 
 ### GANs
