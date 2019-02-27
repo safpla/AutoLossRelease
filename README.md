@@ -22,33 +22,34 @@ pip install -r requirements.txt
 ## Datasets
 ### Regression and Classification
 
-The regression and classification tasks use synthetic data. To synthesize a dataset for the regression experiment, run the following script:
+The regression and classification tasks use synthetic data. To synthesize a dataset for the regression or the classification experiment, run the following script:
 
 ```
 # regression
 python dataio/gen_reg_data.py
 
 # classification
-python dataio/dataGeneration_cls.py
+python dataio/gen_cls_data.py
 ```
 
 ### GANs
-The MNIST database is available at [yann.lecun.com/exdb/mnist/](yan.lecun.com/exdb/mnist).
-You just need to set a path to the argument 'data\_dir' in config file 'config/gan/cfg.py'. The database will be downloaded to that folder at the first run.
+Our GANs experiments use [MNIST](http://yann.lecun.com/exdb/mnist/) and [CIFAR-10](http://www.cs.toronto.edu/~kriz/cifar.html) datasets.
+Set a desired path for the argument `data_dir` in config file `config/gan/cfg.py`, the training scripts will automatically download the data at its first run.
 
-The Cifar10 database is available at [Download page of CIFAR10](http://www.cs.toronto.edu/~kriz/cifar.html)
+
+The Cifar10 database is available at [Download page of CIFAR10]()
 You need to download the python version from this page and unzip it. Set the argument 'data\_dir' in config file 'config/gan_cifar.py' to where you save the data.
 
 ### Multi-task Neural Translation
-The preprocessing of corpus of three language tasks is cumbersome, you can directly use the preprocessed data we provided in this repository.
-Or you can run:
+You can directly use the preprocessed data we have provided in this repository under the path `data/nmt/`.
+Or you can prepare the data by running the following script:
 ```
-cd ./dataio
-python dataGeneration_mnt.py
-cd ..
+python gen_nmt_data.py
 ```
-In this case, you need to download 'tiger\_release\_aug07.corrected.16012013.xml' from [download page of the TIGER corpus](http://www.ims.uni-stuttgart.de/forschung/ressourcen/korpora/tiger.en.html) and save it at 'Data/mnt/pos'
+In this case, you need to download the `tigercorpus-2.2.xml.tar.gz` from [the TIGER corpus](http://www.ims.uni-stuttgart.de/forschung/ressourcen/korpora/tiger.en.html) and uncompress it to the path `data/mnt/pos`.
+The script will expect an XML file named `tiger\_release\_aug07.corrected.16012013.xml`.
 
+Caution: The data preparation for the multi-task neural machine translation task could take 10-15 mins on a desktop with Intel i7-6800K CPU @ 3.40GHz x 12 CPU. 
 
 
 ## Experiments
