@@ -63,26 +63,34 @@ python trainer.py
     --exp_name=[exp_name]
 ```
 where
-- `task_name` is one of: `reg`, `cls`, `gan`, `gan_cifar10`, `mnt`,
-- `task_mode` is one of: `train`, `test`, `baseline`,
+- `task_name` is one of: `reg`, `cls`, `gan`, `gan_cifar10`, `mnt`.
+- `task_mode` is one of: `train`, `test`, `baseline`.
 - `exp_name` can be any string you would like use to name this experiment.
 
-Example:
+### Example: Regresesion with AutoLoss
 Train a controller on the regression task:
 
 ```
-python trainer.py --task_name=reg --task_mode=train --exp_name=reg_train`
+python trainer.py --task_name=reg --task_mode=train --exp_name=reg_train
 ```
 
-After the training of the controller, you want to use the controller to guide the training of the regression model on a new dataset:
-`python trainer.py --task_name=reg --task_mode=test --exp_name=reg_train`
-The program will automaticly load the controller trained in experiment with 'exp\_name' reg_train. So make sure the exp\_name is the same with that in training session. 
-Alternatively, you can specify the checkpoint folder where the controller model is saved by using the parameter 'load\_ctrl':
-`python trainer.py --task_name=reg --task_mode=test --exp_name=reg_test --load_ctrl=path/to/checkpoint/folder/`
+After the training is done, we use the trained controller to guide the training of the regression model on a new dataset:
+```
+# Make sure the `exp_name` is set as the one used in the controller training experiment. 
+python trainer.py --task_name=reg --task_mode=test --exp_name=reg_train
+```
+The script will automatically load the controller trained in the `reg_train` experiment.
 
-Then you may want to compare the result with a baseline training schedule:
-`python trainer.py --task_name=reg --task_mode=baseline --exp_name=reg_baseline`
-You can design your own training schedule through the class 'controller_designed' in 'models/reg.py'
+Alternatively, you can specify a specific checkpoint you want to test with by:
+```
+python trainer.py --task_name=reg --task_mode=test --exp_name=reg_test --load_ctrl=/path/to/checkpoint/folder/`
+```
+
+To compare the results with a baseline training schedule:
+```
+python trainer.py --task_name=reg --task_mode=baseline --exp_name=reg_baseline
+```
+You can design your own training schedule through the class `controller_designed` in `models/reg.py`
 
 ## Pretrained models
 It may take days to train a controller on GANs task. We provide a pretrained controller for MNIST GAN. To test this controller:
