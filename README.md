@@ -38,7 +38,7 @@ Set a desired path for the argument `data_dir` in config file `config/gan/cfg.py
 The training scripts will automatically download the data at its first run.
 
 
-The Cifar10 database is available at [Download page of CIFAR10]()
+The CIFAR-10 data is available at [Download page of CIFAR10](http://www.cs.toronto.edu/~kriz/cifar.html).
 You need to download the python version from this page and unzip it. Set the argument 'data\_dir' in config file 'config/gan_cifar.py' to where you save the data.
 
 ### Multi-task Neural Translation
@@ -54,14 +54,25 @@ The script will expect an XML file named `tiger\_release\_aug07.corrected.160120
 
 
 ## Experiments
-`python trainer.py --task_name=[task_name] --task_mode=[task_mode] --exp_name=[exp_name]`
-[task\_name] includes: reg, cls, gan, gan\_cifar10, mnt;
-[task\_mode] includes: train, test, baseline;
-[exp\_name] can be any string you like.
+Use the following script to launch an experiment:
+
+```
+python trainer.py
+    --task_name=[task_name] 
+    --task_mode=[task_mode] 
+    --exp_name=[exp_name]
+```
+where
+- `task_name` is one of: `reg`, `cls`, `gan`, `gan_cifar10`, `mnt`,
+- `task_mode` is one of: `train`, `test`, `baseline`,
+- `exp_name` can be any string you would like use to name this experiment.
 
 Example:
-Train a controller on regression task:
-`python trainer.py --task_name=reg --task_mode=train --exp_name=reg_train`
+Train a controller on the regression task:
+
+```
+python trainer.py --task_name=reg --task_mode=train --exp_name=reg_train`
+```
 
 After the training of the controller, you want to use the controller to guide the training of the regression model on a new dataset:
 `python trainer.py --task_name=reg --task_mode=test --exp_name=reg_train`
