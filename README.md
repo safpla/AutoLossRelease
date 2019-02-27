@@ -4,7 +4,7 @@ Code for reproducing experiments in [AutoLoss: Learning Discrete Schedules for A
 
 ## Requirements
 ```
-python>=3.6, tensorflow-gpu==1.8.0, matplotlib==2.2.2, imageio==2.4.1
+python>=3.6, tensorflow-gpu==1.8.0, matplotlib==2.2.2, imageio==2.4.1, sklearn==0.20.2, nltk==3.4, subword-nmt==0.3.6
 ```
 
 ## Getting Started
@@ -34,7 +34,8 @@ python dataio/gen_cls_data.py
 
 ### GANs
 Our GANs experiments use [MNIST](http://yann.lecun.com/exdb/mnist/) and [CIFAR-10](http://www.cs.toronto.edu/~kriz/cifar.html) datasets.
-Set a desired path for the argument `data_dir` in config file `config/gan/cfg.py`, the training scripts will automatically download the data at its first run.
+Set a desired path for the argument `data_dir` in config file `config/gan/cfg.py`. 
+The training scripts will automatically download the data at its first run.
 
 
 The Cifar10 database is available at [Download page of CIFAR10]()
@@ -44,12 +45,12 @@ You need to download the python version from this page and unzip it. Set the arg
 You can directly use the preprocessed data we have provided in this repository under the path `data/nmt/`.
 Or you can prepare the data by running the following script:
 ```
-python gen_nmt_data.py
+python dataio/gen_nmt_data.py
 ```
 In this case, you need to download the `tigercorpus-2.2.xml.tar.gz` from [the TIGER corpus](http://www.ims.uni-stuttgart.de/forschung/ressourcen/korpora/tiger.en.html) and uncompress it to the path `data/mnt/pos`.
 The script will expect an XML file named `tiger\_release\_aug07.corrected.16012013.xml`.
 
-Caution: The data preparation for the multi-task neural machine translation task could take 10-15 mins on a desktop with Intel i7-6800K CPU @ 3.40GHz x 12 CPU. 
+*Caution*: The data preparation for the multi-task neural machine translation task could take 10-15 mins on a desktop with Intel i7-6800K CPU @ 3.40GHz x 12 CPU. 
 
 
 ## Experiments
