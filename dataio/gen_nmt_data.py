@@ -14,12 +14,15 @@ import sys
 import codecs
 import re
 import random
+
+import nltk
+nltk.download('punkt')
 from nltk.tokenize import word_tokenize
 
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-sys.path.insert(0, root_dir)
-from lib.subword_nmt.subword_nmt.learn_bpe import learn_bpe
-from lib.subword_nmt.subword_nmt.apply_bpe import BPE
+#sys.path.insert(0, root_dir)
+from subword_nmt.learn_bpe import learn_bpe
+from subword_nmt.apply_bpe import BPE
 
 MT_train_size = 0.8
 MT_valid_size = 0.1
@@ -97,40 +100,28 @@ def get_postag_dict(root):
     print(postag_id)
     return postag_id
 
-def generateMTData():
-    data_dir = os.path.join(root_dir, 'Data/mnt/mt')
+def generate_mt_data():
+    data_dir = os.path.join(root_dir, 'data/nmt/mt')
     de_name = os.path.join(data_dir, 'train.tags.de-en.de')
     en_name = os.path.join(data_dir, 'train.tags.de-en.en')
-
-    process1_de_name = os.path.join(data_dir, 'process1.de')
-    process1_en_name = os.path.join(data_dir, 'process1.en')
-
-    subword_de_dict_name = os.path.join(data_dir, 'subword.de.dict')
-    subword_en_dict_name = os.path.join(data_dir, 'subword.en.dict')
-
-    process2_de_name = os.path.join(data_dir, 'process2.de')
-    process2_en_name = os.path.join(data_dir, 'process2.en')
-
     de = open(de_name, 'r')
     en = open(en_name, 'r')
 
     # Preprocess1: Normalization, replacing arabic, tokenization, truncation
+    process1_de_name = os.path.join(data_dir, 'process1.de')
+    process1_en_name = os.path.join(data_dir, 'process1.en')
     process1_de = open(process1_de_name, 'w')
     process1_en = open(process1_en_name, 'w')
-
     for de_line, en_line in zip(de.readlines(), en.readlines()):
         if de_line[0] == '<' and de_line[-2] == '>':
             continue
         sample = {}
-        sample['de'] = word_tokenize(de_line)
         # TODO: normalization process is removed since case is an important
         # feature in NER task
         #sample['de'] = [w.lower() for w in sample['de']]
+        sample['de'] = word_tokenize(de_line)
         sample['de'] = [replace_arabic(w) for w in sample['de']]
-
         sample['en'] = word_tokenize(en_line)
-        # TODO: normalization process is removed since case is an important
-        # feature in NER task
         #sample['en'] = [w.lower() for w in sample['en']]
         sample['en'] = [replace_arabic(w) for w in sample['en']]
 
@@ -142,10 +133,14 @@ def generateMTData():
     process1_en.close()
 
     # Learning subword
+    subword_de_dict_name = os.path.join(data_dir, 'subword.de.dict')
+    subword_en_dict_name = os.path.join(data_dir, 'subword.en.dict')
     subword_gen(process1_de_name, subword_de_dict_name, 10000)
     subword_gen(process1_en_name, subword_en_dict_name, 10000)
 
     # Preprocess2: Applying subword (subword tokenization)
+    process2_de_name = os.path.join(data_dir, 'process2.de')
+    process2_en_name = os.path.join(data_dir, 'process2.en')
     subword_seg(subword_de_dict_name, process1_de_name, process2_de_name)
     subword_seg(subword_en_dict_name, process1_en_name, process2_en_name)
 
@@ -178,9 +173,10 @@ def generateMTData():
     json.dump(train_data, open(mt_train_file, 'w'), indent=4)
     json.dump(valid_data, open(mt_valid_file, 'w'), indent=4)
     json.dump(test_data, open(mt_test_file, 'w'), indent=4)
+    print('Generate MT data done...')
 
-def generatePOSData():
-    data_dir = os.path.join(root_dir, 'Data/mnt/pos')
+def generate_pos_data():
+    data_dir = os.path.join(root_dir, 'data/nmt/pos')
     raw_file_name = os.path.join(data_dir, 'tiger_release_aug07.corrected.16012013.xml')
     tree = ET.ElementTree(file=raw_file_name)
     root = tree.getroot()
@@ -191,7 +187,6 @@ def generatePOSData():
 
     subword_de_name = os.path.join(data_dir, 'subword.de')
     subword_pos_name = os.path.join(data_dir, 'subword.pos')
-
 
     # Building pos tag dictionary
     postag_id = get_postag_dict(root)
@@ -224,7 +219,7 @@ def generatePOSData():
         #    break
 
     # Using the same subword dictionary in MT task to tokenize word.de
-    subword_de_dict_name = os.path.join(root_dir, 'Data/mnt/mt/subword.de.dict')
+    subword_de_dict_name = os.path.join(root_dir, 'data/nmt/mt/subword.de.dict')
     subword_seg(subword_de_dict_name, word_de_name, subword_de_name)
 
     # Split pos tag according to subword segmentation.
@@ -269,7 +264,7 @@ def generatePOSData():
     all_data = []
     subword_de_stream = open(subword_de_name, 'r')
     subword_pos_stream = open(subword_pos_name, 'r')
-    de_token_id = get_token_id(os.path.join(root_dir, 'Data/mnt/mt/de_token_id.json'))
+    de_token_id = get_token_id(os.path.join(root_dir, 'data/nmt/mt/de_token_id.json'))
     postag_id = postag_id
     for de_line, pos_line in zip(subword_de_stream.readlines(),
                                  subword_pos_stream.readlines()):
@@ -289,9 +284,10 @@ def generatePOSData():
     json.dump(train_data, open(pos_train_file, 'w'), indent=4)
     json.dump(valid_data, open(pos_valid_file, 'w'), indent=4)
     json.dump(test_data, open(pos_test_file, 'w'), indent=4)
+    print('Generate POS data done...')
 
-def generateNERData():
-    data_dir = os.path.join(root_dir, 'Data/mnt/ner')
+def generate_ner_data():
+    data_dir = os.path.join(root_dir, 'data/nmt/ner')
     raw_train_name = os.path.join(data_dir, 'NER-de-train.tsv')
     raw_valid_name = os.path.join(data_dir, 'NER-de-dev.tsv')
     raw_test_name = os.path.join(data_dir, 'NER-de-test.tsv')
@@ -409,7 +405,6 @@ def generateNERData():
 
 
 if __name__ == '__main__':
-    generateMTData()
-    generatePOSData()
-    generateNERData()
-
+    #generate_mt_data()
+    #generate_pos_data()
+    generate_ner_data()
