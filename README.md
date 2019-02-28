@@ -4,7 +4,7 @@ Code for reproducing experiments in [AutoLoss: Learning Discrete Schedules for A
 
 ## Requirements
 ```
-python>=3.6, tensorflow-gpu==1.8.0, matplotlib==2.2.2, imageio==2.4.1
+python>=3.6, tensorflow-gpu==1.8.0, matplotlib==2.2.2, imageio==2.4.1, sklearn==0.20.2, nltk==3.4, subword-nmt==0.3.6
 ```
 
 ## Getting Started
@@ -20,61 +20,77 @@ pip install -r requirements.txt
 ```
 
 ## Datasets
-#### Regression
+### Regression and Classification
 
-To synthesize a dataset for the regression experiment, run the following script:
+The regression and classification tasks use synthetic data. To synthesize a dataset for the regression or the classification experiment, run the following script:
 
 ```
-cd ./dataio
-python dataGeneration_reg.py
-cd ..
-```
+# regression
+python dataio/gen_reg_data.py
 
-### Classification
-```
-cd ./dataio
-python dataGeneration_cls.py
-cd ..
+# classification
+python dataio/gen_cls_data.py
 ```
 
 ### GANs
-The MNIST database is available at [yann.lecun.com/exdb/mnist/](yan.lecun.com/exdb/mnist).
-You just need to set a path to the argument 'data\_dir' in config file 'config/gan/cfg.py'. The database will be downloaded to that folder at the first run.
+Our GANs experiments use [MNIST](http://yann.lecun.com/exdb/mnist/) and [CIFAR-10](http://www.cs.toronto.edu/~kriz/cifar.html) datasets.
+Set a desired path for the argument `data_dir` in config file `config/gan/cfg.py`. 
+The training scripts will automatically download the data at its first run.
 
-The Cifar10 database is available at [Download page of CIFAR10](http://www.cs.toronto.edu/~kriz/cifar.html)
+
+The CIFAR-10 data is available at [Download page of CIFAR10](http://www.cs.toronto.edu/~kriz/cifar.html).
 You need to download the python version from this page and unzip it. Set the argument 'data\_dir' in config file 'config/gan_cifar.py' to where you save the data.
 
 ### Multi-task Neural Translation
-The preprocessing of corpus of three language tasks is cumbersome, you can directly use the preprocessed data we provided in this repository.
-Or you can run:
+You can directly use the preprocessed data we have provided in this repository under the path `data/nmt/`.
+Or you can prepare the data by running the following script:
 ```
-cd ./dataio
-python dataGeneration_mnt.py
-cd ..
+python dataio/gen_nmt_data.py
 ```
-In this case, you need to download 'tiger\_release\_aug07.corrected.16012013.xml' from [download page of the TIGER corpus](http://www.ims.uni-stuttgart.de/forschung/ressourcen/korpora/tiger.en.html) and save it at 'Data/mnt/pos'
+In this case, you need to download the `tigercorpus-2.2.xml.tar.gz` from [the TIGER corpus](http://www.ims.uni-stuttgart.de/forschung/ressourcen/korpora/tiger.en.html) and uncompress it to the path `data/mnt/pos`.
+The script will expect an XML file named `tiger\_release\_aug07.corrected.16012013.xml`.
 
+*Caution*: The data preparation for the multi-task neural machine translation task could take 10-15 mins on a desktop with Intel i7-6800K CPU @ 3.40GHz x 12 CPU. 
 
 
 ## Experiments
-`python trainer.py --task_name=[task_name] --task_mode=[task_mode] --exp_name=[exp_name]`
-[task\_name] includes: reg, cls, gan, gan\_cifar10, mnt;
-[task\_mode] includes: train, test, baseline;
-[exp\_name] can be any string you like.
+Use the following script to launch an experiment:
 
-Example:
-Train a controller on regression task:
-`python trainer.py --task_name=reg --task_mode=train --exp_name=reg_train`
+```
+python trainer.py
+    --task_name=[task_name] 
+    --task_mode=[task_mode] 
+    --exp_name=[exp_name]
+```
+where
+- `task_name` is one of: `reg`, `cls`, `gan`, `gan_cifar10`, `mnt`.
+- `task_mode` is one of: `train`, `test`, `baseline`.
+- `exp_name` can be any string you would like use to name this experiment.
 
-After the training of the controller, you want to use the controller to guide the training of the regression model on a new dataset:
-`python trainer.py --task_name=reg --task_mode=test --exp_name=reg_train`
-The program will automaticly load the controller trained in experiment with 'exp\_name' reg_train. So make sure the exp\_name is the same with that in training session. 
-Alternatively, you can specify the checkpoint folder where the controller model is saved by using the parameter 'load\_ctrl':
-`python trainer.py --task_name=reg --task_mode=test --exp_name=reg_test --load_ctrl=path/to/checkpoint/folder/`
+### Example: Regresesion with AutoLoss
+Train a controller on the regression task:
 
-Then you may want to compare the result with a baseline training schedule:
-`python trainer.py --task_name=reg --task_mode=baseline --exp_name=reg_baseline`
-You can design your own training schedule through the class 'controller_designed' in 'models/reg.py'
+```
+python trainer.py --task_name=reg --task_mode=train --exp_name=reg_train
+```
+
+After the training is done, we use the trained controller to guide the training of the regression model on a new dataset:
+```
+# Make sure the `exp_name` is set as the one used in the controller training experiment. 
+python trainer.py --task_name=reg --task_mode=test --exp_name=reg_train
+```
+The script will automatically load the controller trained in the `reg_train` experiment.
+
+Alternatively, you can specify a specific checkpoint you want to test with by:
+```
+python trainer.py --task_name=reg --task_mode=test --exp_name=reg_test --load_ctrl=/path/to/checkpoint/folder/`
+```
+
+To compare the results with a baseline training schedule:
+```
+python trainer.py --task_name=reg --task_mode=baseline --exp_name=reg_baseline
+```
+You can design your own training schedule through the class `controller_designed` in `models/reg.py`
 
 ## Pretrained models
 It may take days to train a controller on GANs task. We provide a pretrained controller for MNIST GAN. To test this controller:
