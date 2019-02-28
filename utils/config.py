@@ -327,6 +327,15 @@ def override_config(config, args):
     if args.gen_iters:
         config.gen_iters = args.gen_iters
 
+    if args.model_dir:
+        config.model_dir = args.model_dir
+
+    if args.data_dir:
+        config.data_dir = args.data_dir
+
+    if args.save_images_dir:
+        config.save_images_dir = args.save_images_dir
+
 
 
 

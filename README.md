@@ -79,7 +79,7 @@ You can design your own training schedule through the class 'controller_designed
 ## Pretrained models
 It may take days to train a controller on GANs task. We provide a pretrained controller for MNIST GAN. To test this controller:
 ```
-python trainer.py --task_name=gan --task_mode=test --exp_name=[any-experiment-name] --load_ctrl=/path/to/AutoLossRelease/weights/gan_2l_adam_short_ctrl
+python trainer.py --task_name=gan --task_mode=test --exp_name=[any-experiment-name] --load_ctrl=/path/to/AutoLossRelease/weights/gan_2l_adam_short_ctrl --model_dir=/path/to/AutoLossRelease/weights
 ```
 
 ## Citation
