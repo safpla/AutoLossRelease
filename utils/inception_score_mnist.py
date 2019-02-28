@@ -20,7 +20,7 @@ import utils
 mnist_model = None
 # Call this function with a numpy array which has a shape of [None, 784] and
 # with values ranging from 0 to 1
-def get_inception_score(images, splits=10):
+def get_inception_score(mnist_model, images, splits=10):
     bs = 100
     preds = []
     total_samples = images.shape[0]
@@ -51,8 +51,14 @@ def _init_mnist_model():
     mnist_model = Mnist(config, exp_name='mnist_classification')
     mnist_model.load_model(config.pretrained_mnist_checkpoint_dir)
 
-if mnist_model is None:
-    _init_mnist_model()
+def load_mnist_model(config):
+    print('init_mnist_model')
+    mnist_model = Mnist(config, exp_name='mnist_classification')
+    mnist_model.load_model(config.pretrained_mnist_checkpoint_dir)
+    return mnist_model
+
+#if mnist_model is None:
+#    _init_mnist_model()
 
 if __name__ == '__main__':
     mnist = input_data.read_data_sets('/datasets/BigLearning/haowen/mnist',

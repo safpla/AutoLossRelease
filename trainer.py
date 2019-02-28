@@ -479,6 +479,7 @@ if __name__ == '__main__':
 
     arguments_checkout(config, args)
     utils.override_config(config, args)
+    config.print_config(logger)
     config.args = args
 
     # ----Instantiate a trainer object.----

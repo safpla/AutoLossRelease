@@ -32,6 +32,7 @@ class Gan(Basic_model):
         configProto = tf.ConfigProto(gpu_options=gpu_options)
         self.sess = tf.InteractiveSession(config=configProto,
                                             graph=self.graph)
+        self.mnist_model = inception_score_mnist.load_mnist_model(config)
 
         self.exp_name = exp_name
 
@@ -495,8 +496,8 @@ class Gan(Basic_model):
             all_samples.append(samples)
         all_samples = np.concatenate(all_samples, axis=0)
         all_samples = all_samples.reshape((-1, 28*28))
-        return inception_score_mnist.get_inception_score(all_samples,
-                                                   splits=splits)
+        return inception_score_mnist.get_inception_score(self.mnist_model, all_samples,
+                                                         splits=splits)
 
     def generate_images(self, step):
         feed_dict = {self.noise: self.fixed_noise_128,

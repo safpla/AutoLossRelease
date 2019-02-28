@@ -227,7 +227,7 @@ class Gan_cifar10(Gan):
 
     def get_state(self):
         if self.step_number == 0:
-            state = [0] * self.config.dim_output_ctrl
+            state = [0] * self.config.dim_input_ctrl
         else:
             state = [
                      math.log(self.mag_disc_grad / self.mag_gen_grad),

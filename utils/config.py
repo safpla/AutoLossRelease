@@ -329,6 +329,7 @@ def override_config(config, args):
 
     if args.model_dir:
         config.model_dir = args.model_dir
+        config.pretrained_mnist_checkpoint_dir = os.path.join(config.model_dir, 'mnist_classification')
 
     if args.data_dir:
         config.data_dir = args.data_dir
