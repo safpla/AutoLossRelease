@@ -1,7 +1,8 @@
-import tensorflow as tf
-import numpy as np
 import os
 import random
+
+import numpy as np
+import tensorflow as tf
 
 from models.basic_model import Basic_model
 import utils

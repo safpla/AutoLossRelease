@@ -2,24 +2,24 @@
 # __Author__ == "Haowen Xu"
 # __Data__ == "04-08-2018"
 
-import tensorflow as tf
-import numpy as np
-import logging
 import os
 import sys
 import math
-from time import gmtime, strftime
-import argparse
-from collections import deque
 import socket
+import argparse
+from time import gmtime, strftime
+from collections import deque
 
-from models import controller_reinforce
-from models import controller_ppo
+import tensorflow as tf
+import numpy as np
+
 import utils
 from utils.analyse_utils import loss_analyzer_reg
 from utils.analyse_utils import loss_analyzer_gan
 from utils import replaybuffer
 from utils import metrics
+from models import controller_reinforce
+from models import controller_ppo
 
 
 root_path = os.path.dirname(os.path.realpath(__file__))
@@ -42,7 +42,7 @@ def parse_args():
 
 def arguments_checkout(config, args):
     # ----Task name checking.----
-    if not args.task_name in ['reg', 'cls', 'gan', 'mnt', 'gan_cifar10']:
+    if not args.task_name in ['reg', 'cls', 'gan', 'nmt', 'gan_cifar10']:
         logger.exception('Unexcepted task name')
         exit()
 
@@ -106,9 +106,9 @@ class Trainer():
             from models import gan_cifar10
             self.model_task = gan_cifar10.Gan_cifar10(config,
                                                       exp_name+'_gan_cifar10')
-        elif args.task_name == 'mnt':
-            from models import mnt
-            self.model_task = mnt.Mnt(config, exp_name+'_mnt')
+        elif args.task_name == 'nmt':
+            from models import nmt
+            self.model_task = nmt.Nmt(config, exp_name+'_nmt')
         else:
             raise NotImplementedError
 
@@ -401,7 +401,7 @@ class Trainer():
             model_task.load_model()
             inps = model_task.get_inception_score(5000)
             logger.info('incpetion_score_test: {}'.format(inps))
-        elif config.args.task_name == 'mnt':
+        elif config.args.task_name == 'nmt':
             model_task.load_model()
             # TODO: not implemented
             pass
@@ -423,11 +423,11 @@ class Trainer():
         elif task_name == 'gan_cifar10':
             from models import gan_cifar10
             model_ctrl = gan_cifar10.controller_designed(config=config)
-        elif task_name == 'mnt':
-            from models import mnt
-            model_ctrl = mnt.controller_designed(config=config)
+        elif task_name == 'nmt':
+            from models import nmt
+            model_ctrl = nmt.controller_designed(config=config)
 
-        if task_name == 'mnt':
+        if task_name == 'nmt':
             self.config.total_episodes = 1
             self.model_ctrl = model_ctrl
             self.train_ppo()
@@ -456,7 +456,7 @@ class Trainer():
             inps = model_task.get_inception_score(500, splits=5)
             logger.info('inception_score_test: {}'.format(inps))
             return inps
-        elif config.args.task_name == 'mnt':
+        elif config.args.task_name == 'nmt':
             return 0
 
     def generate(self, load_stud):
@@ -485,7 +485,6 @@ if __name__ == '__main__':
     if args.task_mode == 'train':
         # ----Training----
         logger.info('TRAIN')
-        #args.load_ctrl = '/media/haowen/autoLoss/saved_models/rebuttal_gan_2l_adam_short_ctrl/'
         if config.rl_method == 'reinforce':
             trainer.train(load_ctrl=args.load_ctrl, save_ctrl=args.save_ctrl)
         elif config.rl_method == 'ppo':

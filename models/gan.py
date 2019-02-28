@@ -2,11 +2,12 @@
 # __Author__ == "Haowen Xu"
 # __Data__ == "04-29-2018"
 
+import os
+import math
+
+import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-import numpy as np
-import math
-import os
 
 from dataio.dataset_mnist import Dataset_mnist
 import utils
@@ -17,24 +18,9 @@ from models.basic_model import Basic_model
 logger = utils.get_logger()
 
 class Gan(Basic_model):
-    '''
-    Public variables (all task models should have these public variables):
-        self.extra_info
-        self.checkpoint_dir
-        self.best_performance
-        self.test_dataset
-    '''
-
     def __init__(self, config, exp_name='new_exp_gan', arch=None):
-        self.config = config
-        self.graph = tf.Graph()
-        gpu_options = tf.GPUOptions(allow_growth=True)
-        configProto = tf.ConfigProto(gpu_options=gpu_options)
-        self.sess = tf.InteractiveSession(config=configProto,
-                                            graph=self.graph)
-
-        self.exp_name = exp_name
-
+        super(Gan, self).__init__(config, exp_name)
+        self.mnist_model = inception_score_mnist.load_mnist_model(config)
         self.arch = arch
         if arch:
             logger.info('architecture:')
@@ -495,7 +481,7 @@ class Gan(Basic_model):
             all_samples.append(samples)
         all_samples = np.concatenate(all_samples, axis=0)
         all_samples = all_samples.reshape((-1, 28*28))
-        return inception_score_mnist.get_inception_score(all_samples,
+        return inception_score_mnist.get_inception_score(self.mnist_model, all_samples,
                                                    splits=splits)
 
     def generate_images(self, step):

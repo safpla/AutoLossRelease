@@ -2,12 +2,13 @@
 # __Author__ == "Haowen Xu"
 # __Data__ == "05-04-2018"
 
-import tensorflow as tf
-import tensorflow.contrib.slim as slim
-import numpy as np
+import os
 import math
 import time
-import os
+
+import numpy as np
+import tensorflow as tf
+import tensorflow.contrib.slim as slim
 
 import utils
 from models import layers
@@ -57,13 +58,9 @@ class Basic_model():
         self.saver.restore(self.sess, model_checkpoint_path)
 
     def save_model(self, step, mute=False):
-        task_name = self.exp_name
-        model_dir = self.config.model_dir
-        task_dir = os.path.join(model_dir, task_name)
-        self.checkpoint_dir = task_dir
-        if not os.path.exists(task_dir):
-            os.mkdir(task_dir)
-        save_path = os.path.join(task_dir, 'model')
+        if not os.path.exists(self.checkpoint_dir):
+            os.makedirs(self.checkpoint_dir)
+        save_path = os.path.join(self.checkpoint_dir, 'model')
         if not mute:
             logger.info('Save model at {}'.format(save_path))
         self.saver.save(self.sess, save_path, global_step=step)

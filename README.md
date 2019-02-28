@@ -67,7 +67,7 @@ where
 - `task_mode` is one of: `train`, `test`, `baseline`.
 - `exp_name` can be any string you would like use to name this experiment.
 
-### Example: Regresesion with AutoLoss
+### Example: Regression with AutoLoss
 Train a controller on the regression task:
 
 ```
@@ -83,7 +83,7 @@ The script will automatically load the controller trained in the `reg_train` exp
 
 Alternatively, you can specify a specific checkpoint you want to test with by:
 ```
-python trainer.py --task_name=reg --task_mode=test --exp_name=reg_test --load_ctrl=/path/to/checkpoint/folder/`
+python trainer.py --task_name=reg --task_mode=test --exp_name=reg_test --load_ctrl=/path/to/checkpoint/folder/
 ```
 
 To compare the results with a baseline training schedule:

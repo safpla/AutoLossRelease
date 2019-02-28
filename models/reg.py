@@ -2,14 +2,15 @@
 # __Author__ == "Haowen Xu"
 # __Data__ == "04-08-2018"
 
-import tensorflow as tf
-import tensorflow.contrib.slim as slim
 import numpy as np
 import math
 import os
 
-from dataio.dataset import Dataset
+import tensorflow as tf
+import tensorflow.contrib.slim as slim
+
 import utils
+from dataio.dataset import Dataset
 from models.basic_model import Basic_model
 
 logger = utils.get_logger()
@@ -24,14 +25,7 @@ class Reg(Basic_model):
     '''
 
     def __init__(self, config, exp_name='new_exp'):
-        self.config = config
-        self.graph = tf.Graph()
-        gpu_options = tf.GPUOptions(allow_growth=True)
-        configProto = tf.ConfigProto(gpu_options=gpu_options)
-        self.sess = tf.InteractiveSession(config=configProto,
-                                          graph=self.graph)
-        self.exp_name = exp_name
-
+        super(Reg, self).__init__(config, exp_name)
         self.reset()
         self._load_datasets()
         self._build_placeholder()
@@ -68,7 +62,6 @@ class Reg(Basic_model):
         self.previous_train_loss = [0] * self.config.num_pre_loss
         self.mag_mse_grad = 0
         self.mag_l1_grad = 0
-        self.checkpoint_dir = None
 
         # to control when to terminate the episode
         self.endurance = 0

@@ -29,16 +29,16 @@ from utils.data_utils import prepare_batch
 from utils.data_utils import prepare_train_batch
 logger = utils.get_logger()
 
-class Mnt(Basic_model):
+class Nmt(Basic_model):
     '''
     We use variable scope to organize variables, instead of graph
     '''
 
-    def __init__(self, config, exp_name='Mnt'):
+    def __init__(self, config, exp_name='Nmt'):
         self.mode = config.args.task_mode
 
         # Config must define RNN type and attention type
-        super(Mnt, self).__init__(config, exp_name)
+        super(Nmt, self).__init__(config, exp_name)
         self.dtype = tf.float32
         self.global_step = tf.Variable(0, trainable=False, name='global_step')
 

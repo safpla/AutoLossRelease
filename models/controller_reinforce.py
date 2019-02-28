@@ -2,27 +2,22 @@
 # __Author__ == "Haowen Xu"
 # __Data__ == "04-07-2018"
 
-import tensorflow as tf
-import tensorflow.contrib.slim as slim
-import numpy as np
 import os
 import time
 import math
 
-import utils
+import numpy as np
+import tensorflow as tf
+import tensorflow.contrib.slim as slim
+
 from models.basic_model import Basic_model
+import utils
 
 logger = utils.get_logger()
 
 class Controller(Basic_model):
     def __init__(self, config, exp_name='new_exp_ctrl'):
-        self.config = config
-        self.graph = tf.Graph()
-        gpu_options = tf.GPUOptions(allow_growth=True)
-        configProto = tf.ConfigProto(gpu_options=gpu_options)
-        self.sess = tf.InteractiveSession(config=configProto,
-                                          graph=self.graph)
-        self.exp_name = exp_name
+        super(Controller, self).__init__(config, exp_name)
         self._build_placeholder()
         self._build_graph()
 

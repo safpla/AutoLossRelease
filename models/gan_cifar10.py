@@ -17,27 +17,13 @@ from models.gan import Gan
 logger = utils.get_logger()
 
 class Gan_cifar10(Gan):
-    '''
-    Public variables (all task models should have these public variables):
-        self.extra_info
-        self.checkpoint_dir
-        self.best_performance
-        self.test_dataset
-    '''
-
     def __init__(self, config, exp_name='new_exp_gan_cifar10', arch=None):
-        self.config = config
-        self.graph = tf.Graph()
-        self.exp_name = exp_name
+        super(Gan_cifar10, self).__init__(config, exp_name)
         self.arch = arch
         if arch:
             logger.info('architecture:')
             for key in sorted(arch.keys()):
                 logger.info('{}: {}'.format(key, arch[key]))
-        gpu_options = tf.GPUOptions(allow_growth=True)
-        configProto = tf.ConfigProto(gpu_options=gpu_options)
-        self.sess = tf.InteractiveSession(config=configProto,
-                                            graph=self.graph)
         self.reset()
         self._load_datasets()
 

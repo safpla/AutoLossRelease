@@ -5,10 +5,11 @@ from __future__ import print_function
 import os.path
 import sys
 import tarfile
-import numpy as np
-import tensorflow as tf
 import math
 import sys
+
+import numpy as np
+import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
 root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -20,7 +21,7 @@ import utils
 mnist_model = None
 # Call this function with a numpy array which has a shape of [None, 784] and
 # with values ranging from 0 to 1
-def get_inception_score(images, splits=10):
+def get_inception_score(mnist_model, images, splits=10):
     bs = 100
     preds = []
     total_samples = images.shape[0]
@@ -42,17 +43,12 @@ def get_inception_score(images, splits=10):
         scores.append(np.exp(kl))
     return np.mean(scores), np.std(scores)
 
-# This function is called automatically.
-def _init_mnist_model():
+def load_mnist_model(config):
     print('init_mnist_model')
-    global mnist_model
-    config_path = os.path.join(root_path, 'config/gan')
-    config = utils.load_config(config_path)
     mnist_model = Mnist(config, exp_name='mnist_classification')
     mnist_model.load_model(config.pretrained_mnist_checkpoint_dir)
+    return mnist_model
 
-if mnist_model is None:
-    _init_mnist_model()
 
 if __name__ == '__main__':
     mnist = input_data.read_data_sets('/datasets/BigLearning/haowen/mnist',

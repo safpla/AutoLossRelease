@@ -15,11 +15,9 @@ class Config():
 
         # Environment & Path
         self.exp_dir = root_path
-        self.data_dir = os.path.join(self.exp_dir, 'Data')
-        if self.hostname == 'Luna-Desktop':
-            self.model_dir = '/media/haowen/autoLoss/saved_models'
-        else:
-            self.model_dir = '/datasets/BigLearning/haowen/autoLoss/saved_models'
+        self.data_dir = os.path.join(self.exp_dir, 'data')
+        self.model_dir = 'ckpts'
+
 
         # Data
         self.train_data_files = [os.path.join(self.data_dir, 'mnt/{}/{}_train.json'.format(task, task))

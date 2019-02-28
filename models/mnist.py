@@ -33,13 +33,7 @@ def bias_variable(shape):
 
 class Mnist(Basic_model):
     def __init__(self, config, exp_name='new_exp'):
-        self.config = config
-        self.graph = tf.Graph()
-        gpu_options = tf.GPUOptions(allow_growth=True)
-        configProto = tf.ConfigProto(gpu_options=gpu_options)
-        self.sess = tf.InteractiveSession(config=configProto,
-                                            graph=self.graph)
-        self.exp_name = exp_name
+        super(Mnist, self).__init__(config, exp_name)
         train_data_file = config.data_dir
         valid_data_file = config.data_dir
         self.train_dataset = Dataset_mnist()

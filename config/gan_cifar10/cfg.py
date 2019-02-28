@@ -11,14 +11,12 @@ class Config():
         self.hostname = socket.gethostname()
         # Environment & Path
         self.exp_dir = root_path
-        if self.hostname == 'Luna-Desktop':
-            self.model_dir = '/media/haowen/autoLoss/saved_models'
-            self.data_dir = '/media/haowen/cifar10/cifar-10-batches-py'
-            self.save_images_dir = '/media/haowen/autoLoss/saved_images'
-        else:
-            self.model_dir = '/datasets/BigLearning/haowen/autoLoss/saved_models'
-            self.data_dir = '/datasets/BigLearning/haowen/cifar10/cifar-10-batches-py'
-            self.save_images_dir = '/datasets/BigLearning/haowen/autoLoss/saved_images'
+
+        # Set the path to MNIST dataset below
+        self.data_dir = 'data/gan_cifar10/cifar-10-batches-py'
+        self.save_images_dir = 'data/gan_cifar10/saved_images'
+
+        self.model_dir = 'ckpts'
         self.pretrained_mnist_checkpoint_dir = os.path.join(self.model_dir, 'mnist_classification')
 
         # Data
@@ -27,7 +25,7 @@ class Config():
         self.dim_z = 128
         self.dim_x = 3072
         self.dim_c = 64
-        self.disc_iters = 2
+        self.disc_iters = 1
         self.gen_iters = 1
         self.inps_batches = 50
         self.inps_splits = 1

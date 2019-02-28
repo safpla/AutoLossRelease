@@ -11,17 +11,12 @@ class Config():
         self.hostname = socket.gethostname()
         # Environment & Path
         self.exp_dir = root_path
-        if self.hostname == 'Luna-Desktop':
-            self.model_dir = '/media/haowen/autoLoss/saved_models'
-            self.data_dir = '/media/haowen/mnist'
-            self.save_images_dir = '/media/haowen/autoLoss/saved_images'
-        else:
-            self.model_dir = '/datasets/BigLearning/haowen/autoLoss/saved_models'
-            self.data_dir = '/datasets/BigLearning/haowen/mnist'
-            self.save_images_dir = '/datasets/BigLearning/haowen/autoLoss/saved_images'
-        self.pretrained_mnist_checkpoint_dir = os.path.join(self.model_dir, 'mnist_classification')
 
-        # Data
+        # Set the path to MNIST dataset below
+        self.data_dir = 'data/gan/'
+        self.save_images_dir = 'data/gan/saved_images/'
+        self.model_dir = 'ckpts'
+        self.pretrained_mnist_checkpoint_dir = 'weights/mnist_classification' 
 
         # Task model
         self.dim_z = 128
