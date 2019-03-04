@@ -37,6 +37,9 @@ def parse_args():
     parser.add_argument('--lambda_task', type=float, help='coefficient for L1 regularization in regression and classification task')
     parser.add_argument('--disc_iters', type=int, help='GANs, discrimintor updating iterations')
     parser.add_argument('--gen_iters', type=int, help='GANs, generator updating iterations')
+    parser.add_argument('--model_dir', type=str, help='where to save weights')
+    parser.add_argument('--data_dir', type=str, help='data folder')
+    parser.add_argument('--save_images_dir', type=str, help='where to save images')
 
     return parser.parse_args()
 
@@ -359,7 +362,7 @@ class Trainer():
                     logger.info(best_loss)
                     break
             if save_ctrl:
-                model_ctrl.save_ctrl(ep_meta)
+                model_ctrl.save_model(ep_meta)
 
     def test(self, load_ctrl, ckpt_num=None):
         config = self.config
@@ -476,6 +479,7 @@ if __name__ == '__main__':
 
     arguments_checkout(config, args)
     utils.override_config(config, args)
+    config.print_config(logger)
     config.args = args
 
     # ----Instantiate a trainer object.----

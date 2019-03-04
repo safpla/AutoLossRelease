@@ -1,6 +1,0 @@
-model_checkpoint_path: "Pendulum-v0-114296.ckpt"
-all_model_checkpoint_paths: "Pendulum-v0-57160.ckpt"
-all_model_checkpoint_paths: "Pendulum-v0-71432.ckpt"
-all_model_checkpoint_paths: "Pendulum-v0-85728.ckpt"
-all_model_checkpoint_paths: "Pendulum-v0-100000.ckpt"
-all_model_checkpoint_paths: "Pendulum-v0-114296.ckpt"

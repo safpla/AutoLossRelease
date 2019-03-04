@@ -49,6 +49,17 @@ def load_mnist_model(config):
     mnist_model.load_model(config.pretrained_mnist_checkpoint_dir)
     return mnist_model
 
+<<<<<<< HEAD
+=======
+def load_mnist_model(config):
+    print('init_mnist_model')
+    mnist_model = Mnist(config, exp_name='mnist_classification')
+    mnist_model.load_model(config.pretrained_mnist_checkpoint_dir)
+    return mnist_model
+
+#if mnist_model is None:
+#    _init_mnist_model()
+>>>>>>> a64e28aa931565b2bc54b4ed88b085447e04f690
 
 if __name__ == '__main__':
     mnist = input_data.read_data_sets('/datasets/BigLearning/haowen/mnist',
