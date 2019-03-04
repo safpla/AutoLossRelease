@@ -48,10 +48,3 @@ def load_mnist_model(config):
     mnist_model = Mnist(config, exp_name='mnist_classification')
     mnist_model.load_model(config.pretrained_mnist_checkpoint_dir)
     return mnist_model
-
-
-if __name__ == '__main__':
-    mnist = input_data.read_data_sets('/datasets/BigLearning/haowen/mnist',
-                                      one_hot=True)
-    batch = mnist.train.next_batch(2000)
-    print(get_inception_score(batch[0], splits=1))
