@@ -1,12 +1,14 @@
-import os, sys
-import numpy as np
+import os
+import sys
 import random
-import tensorflow as tf
-from matplotlib import pyplot as plt
 import pickle
 import urllib.request
 import shutil
 import tarfile
+
+import numpy as np
+import tensorflow as tf
+from matplotlib import pyplot as plt
 
 root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, root_path)
@@ -58,9 +60,3 @@ class Dataset_cifar10(Dataset):
         self._index = np.arange(self._num_examples)
         self._index_in_epoch = 0
         self._epochs_completed = 0
-
-
-if __name__ == '__main__':
-    data_dir = '/datasets/BigLearning/haowen/cifar10/cifar-10-batches-py'
-    dataset = Dataset_cifar10()
-    dataset.load_cifar10(data_dir)
