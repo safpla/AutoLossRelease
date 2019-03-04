@@ -19,21 +19,8 @@ logger = utils.get_logger()
 
 class Gan(Basic_model):
     def __init__(self, config, exp_name='new_exp_gan', arch=None):
-<<<<<<< HEAD
         super(Gan, self).__init__(config, exp_name)
         self.mnist_model = inception_score_mnist.load_mnist_model(config)
-=======
-        self.config = config
-        self.graph = tf.Graph()
-        gpu_options = tf.GPUOptions(allow_growth=True)
-        configProto = tf.ConfigProto(gpu_options=gpu_options)
-        self.sess = tf.InteractiveSession(config=configProto,
-                                            graph=self.graph)
-        self.mnist_model = inception_score_mnist.load_mnist_model(config)
-
-        self.exp_name = exp_name
-
->>>>>>> a64e28aa931565b2bc54b4ed88b085447e04f690
         self.arch = arch
         if arch:
             logger.info('architecture:')
@@ -495,11 +482,7 @@ class Gan(Basic_model):
         all_samples = np.concatenate(all_samples, axis=0)
         all_samples = all_samples.reshape((-1, 28*28))
         return inception_score_mnist.get_inception_score(self.mnist_model, all_samples,
-<<<<<<< HEAD
-                                                   splits=splits)
-=======
-                                                         splits=splits)
->>>>>>> a64e28aa931565b2bc54b4ed88b085447e04f690
+                                                        splits=splits)
 
     def generate_images(self, step):
         feed_dict = {self.noise: self.fixed_noise_128,
