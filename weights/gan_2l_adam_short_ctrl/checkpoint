@@ -1,2 +1,2 @@
-model_checkpoint_path: "/home/haowen/GitHub/AutoLossRelease/weights/gan_2l_adam_short_ctrl/model-6"
-all_model_checkpoint_paths: "/home/haowen/GitHub/AutoLossRelease/weights/gan_2l_adam_short_ctrl/model-6"
+model_checkpoint_path: "weights/gan_2l_adam_short_ctrl/model-6"
+all_model_checkpoint_paths: "weights/gan_2l_adam_short_ctrl/model-6"
