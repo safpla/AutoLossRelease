@@ -47,7 +47,7 @@ Or you can prepare the data by running the following script:
 ```
 python dataio/gen_nmt_data.py
 ```
-In this case, you need to download the `tigercorpus-2.2.xml.tar.gz` from [the TIGER corpus](http://www.ims.uni-stuttgart.de/forschung/ressourcen/korpora/tiger.en.html) and uncompress it to the path `data/mnt/pos`.
+In this case, you need to download the `tigercorpus-2.2.xml.tar.gz` from [the TIGER corpus](http://www.ims.uni-stuttgart.de/forschung/ressourcen/korpora/tiger.en.html) and uncompress it to the path `data/nmt/pos`.
 The script will expect an XML file named `tiger\_release\_aug07.corrected.16012013.xml`.
 
 *Caution*: The data preparation for the multi-task neural machine translation task could take 10-15 mins on a desktop with Intel i7-6800K CPU @ 3.40GHz x 12 CPU. 
@@ -63,7 +63,7 @@ python trainer.py
     --exp_name=[exp_name]
 ```
 where
-- `task_name` is one of: `reg`, `cls`, `gan`, `gan_cifar10`, `mnt`.
+- `task_name` is one of: `reg`, `cls`, `gan`, `gan_cifar10`, `nmt`.
 - `task_mode` is one of: `train`, `test`, `baseline`.
 - `exp_name` can be any string you would like use to name this experiment.
 
