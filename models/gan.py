@@ -64,7 +64,6 @@ class Gan(Basic_model):
         self.mag_disc_grad = None
         self.inception_score = 0
         self.inps_ema = 0
-        self.checkpoint_dir = None
 
         # to control when to terminate the episode
         self.endurance = 0

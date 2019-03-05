@@ -20,11 +20,11 @@ class Config():
 
 
         # Data
-        self.train_data_files = [os.path.join(self.data_dir, 'mnt/{}/{}_train.json'.format(task, task))
+        self.train_data_files = [os.path.join(self.data_dir, 'nmt/{}/{}_train.json'.format(task, task))
                                  for task in self.task_names]
-        self.valid_data_files = [os.path.join(self.data_dir, 'mnt/{}/{}_valid.json'.format(task, task))
+        self.valid_data_files = [os.path.join(self.data_dir, 'nmt/{}/{}_valid.json'.format(task, task))
                                  for task in self.task_names]
-        self.test_data_files = [os.path.join(self.data_dir, 'mnt/{}/{}_test.json'.format(task, task))
+        self.test_data_files = [os.path.join(self.data_dir, 'nmt/{}/{}_test.json'.format(task, task))
                                 for task in self.task_names]
 
         self.max_seq_length = 60

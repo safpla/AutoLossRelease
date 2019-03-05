@@ -15,11 +15,7 @@ class Config():
         # Set the path to MNIST dataset below
         self.data_dir = 'data/gan_cifar10/cifar-10-batches-py'
         self.save_images_dir = 'data/gan_cifar10/saved_images'
-
         self.model_dir = 'ckpts'
-        self.pretrained_mnist_checkpoint_dir = os.path.join(self.model_dir, 'mnist_classification')
-
-        # Data
 
         # Task model
         self.dim_z = 128

@@ -405,6 +405,6 @@ def generate_ner_data():
 
 
 if __name__ == '__main__':
-    #generate_mt_data()
-    #generate_pos_data()
+    generate_mt_data()
+    generate_pos_data()
     generate_ner_data()
